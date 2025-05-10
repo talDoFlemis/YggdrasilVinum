@@ -1,28 +1,10 @@
-using YggdrasilVinum.Models;
 using Serilog;
+using YggdrasilVinum.Models;
 
 namespace YggdrasilVinum.Parsers;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-
 public static class WineDataParser
 {
-    public readonly struct ParseError
-    {
-        public readonly string Message;
-        public readonly int LineNumber;
-
-        public ParseError(string message, int lineNumber)
-        {
-            Message = message;
-            LineNumber = lineNumber;
-        }
-
-        public override string ToString() => $"Line {LineNumber}: {Message}";
-    }
-
     public static Result<List<WineRecord>, ParseError> ParseCsvFile(string filePath)
     {
         Log.Information("Parsing wine data CSV file: {FilePath}", filePath);
@@ -74,7 +56,7 @@ public static class WineDataParser
         {
             var records = new List<WineRecord>();
             // Read and skip header line
-            string headerLine = reader.ReadLine();
+            var headerLine = reader.ReadLine();
             Log.Debug("Skipped CSV header: {HeaderLine}", headerLine);
 
             if (headerLine == null)
@@ -85,7 +67,7 @@ public static class WineDataParser
             }
 
             string line;
-            int lineNumber = 1;
+            var lineNumber = 1;
 
             while ((line = reader.ReadLine()) != null)
             {
@@ -123,7 +105,7 @@ public static class WineDataParser
     {
         try
         {
-            string[] parts = line.Split(',');
+            var parts = line.Split(',');
             if (parts.Length != 4)
             {
                 Log.Warning("Invalid CSV line format at line {LineNumber}: Expected 4 fields, got {FieldCount}",
@@ -132,14 +114,14 @@ public static class WineDataParser
                     new ParseError($"Expected 4 fields, got {parts.Length}", lineNumber));
             }
 
-            if (!int.TryParse(parts[0], out int wineId))
+            if (!int.TryParse(parts[0], out var wineId))
             {
                 Log.Warning("Invalid wine ID at line {LineNumber}: {Value}", lineNumber, parts[0]);
                 return Result<WineRecord, ParseError>.Error(
                     new ParseError("Invalid wine ID", lineNumber));
             }
 
-            if (!int.TryParse(parts[2], out int harvestYear))
+            if (!int.TryParse(parts[2], out var harvestYear))
             {
                 Log.Warning("Invalid harvest year at line {LineNumber}: {Value}", lineNumber, parts[2]);
                 return Result<WineRecord, ParseError>.Error(
@@ -147,10 +129,7 @@ public static class WineDataParser
             }
 
             var wineTypeResult = ParseWineType(parts[3], lineNumber);
-            if (wineTypeResult.IsError)
-            {
-                return Result<WineRecord, ParseError>.Error(wineTypeResult.GetErrorOrThrow());
-            }
+            if (wineTypeResult.IsError) return Result<WineRecord, ParseError>.Error(wineTypeResult.GetErrorOrThrow());
 
             Log.Debug(
                 "CSV line parsed successfully: WineId={WineId}, Label={Label}, HarvestYear={HarvestYear}, Type={WineType}",
@@ -179,11 +158,25 @@ public static class WineDataParser
                 new ParseError($"Invalid wine type: {type}", lineNumber))
         };
 
-        if (result.IsError)
-        {
-            Log.Warning("Invalid wine type at line {LineNumber}: {WineType}", lineNumber, type);
-        }
+        if (result.IsError) Log.Warning("Invalid wine type at line {LineNumber}: {WineType}", lineNumber, type);
 
         return result;
+    }
+
+    public readonly struct ParseError
+    {
+        public readonly string Message;
+        public readonly int LineNumber;
+
+        public ParseError(string message, int lineNumber)
+        {
+            Message = message;
+            LineNumber = lineNumber;
+        }
+
+        public override string ToString()
+        {
+            return $"Line {LineNumber}: {Message}";
+        }
     }
 }

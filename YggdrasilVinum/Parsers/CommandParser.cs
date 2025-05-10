@@ -5,48 +5,10 @@ namespace YggdrasilVinum.Parsers;
 
 public static class CommandParser
 {
-    public readonly struct Command
-    {
-        public readonly CommandType Type;
-        public readonly int Key;
-
-        public Command(CommandType type, int key)
-        {
-            Type = type;
-            Key = key;
-        }
-    }
-
     public enum CommandType
     {
         Insert,
         Search
-    }
-
-    public readonly struct CommandFileHeader
-    {
-        public readonly int MaxChildren;
-
-        public CommandFileHeader(int maxChildren)
-        {
-            if (maxChildren <= 2)
-                throw new ArgumentException("MaxChildren must be greater than 2", nameof(maxChildren));
-            MaxChildren = maxChildren;
-        }
-    }
-
-    public readonly struct ParseError
-    {
-        public readonly string Message;
-        public readonly int LineNumber;
-
-        public ParseError(string message, int lineNumber)
-        {
-            Message = message;
-            LineNumber = lineNumber;
-        }
-
-        public override string ToString() => $"Line {LineNumber}: {Message}";
     }
 
     public static Result<(CommandFileHeader Header, List<Command> Commands), ParseError> ParseCommandFile(
@@ -68,8 +30,8 @@ public static class CommandParser
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read,
-                bufferSize: 4096, // Explicit buffer size
-                useAsync: false);
+                4096, // Explicit buffer size
+                false);
             using var reader = new StreamReader(fileStream);
             var result = ParseCommandsFromReader(reader);
             Log.Debug("Command file parsing completed: {FilePath}", filePath);
@@ -109,7 +71,7 @@ public static class CommandParser
         try
         {
             // Read the first line for header
-            string headerLine = reader.ReadLine();
+            var headerLine = reader.ReadLine();
             if (headerLine == null)
             {
                 Log.Warning("Command input is empty");
@@ -128,9 +90,9 @@ public static class CommandParser
 
             var commandFileHeader = headerResult.GetValueOrThrow();
             Log.Debug("Header parsed successfully, MaxChildren: {MaxChildren}", commandFileHeader.MaxChildren);
-            var commands = new List<Command>(capacity: 32); // Pre-allocate with reasonable initial capacity
+            var commands = new List<Command>(32); // Pre-allocate with reasonable initial capacity
             string line;
-            int lineNumber = 1;
+            var lineNumber = 1;
 
             // Process commands line by line
             while ((line = reader.ReadLine()) != null)
@@ -180,7 +142,7 @@ public static class CommandParser
                 new ParseError("Header must start with 'FLH/'", lineNumber));
 
         // Parse value using ReadOnlySpan to avoid allocations
-        if (!int.TryParse(line.AsSpan(4), out int maxChildren))
+        if (!int.TryParse(line.AsSpan(4), out var maxChildren))
             return Result<CommandFileHeader, ParseError>.Error(
                 new ParseError("Invalid max children value in header", lineNumber));
 
@@ -208,14 +170,14 @@ public static class CommandParser
 
         try
         {
-            int colonIndex = line.IndexOf(':');
+            var colonIndex = line.IndexOf(':');
             if (colonIndex == -1)
                 return Result<Command, ParseError>.Error(
                     new ParseError("Command missing colon separator", lineNumber));
 
             // Use ReadOnlySpan to avoid allocations
-            ReadOnlySpan<char> operation = line.AsSpan(0, colonIndex);
-            if (!int.TryParse(line.AsSpan(colonIndex + 1), out int key))
+            var operation = line.AsSpan(0, colonIndex);
+            if (!int.TryParse(line.AsSpan(colonIndex + 1), out var key))
                 return Result<Command, ParseError>.Error(
                     new ParseError("Invalid key value in command", lineNumber));
 
@@ -236,6 +198,47 @@ public static class CommandParser
             Log.Warning(ex, "Failed to parse command at line {LineNumber}: {Line}", lineNumber, line);
             return Result<Command, ParseError>.Error(
                 new ParseError($"Failed to parse command: {ex.Message}", lineNumber));
+        }
+    }
+
+    public readonly struct Command
+    {
+        public readonly CommandType Type;
+        public readonly int Key;
+
+        public Command(CommandType type, int key)
+        {
+            Type = type;
+            Key = key;
+        }
+    }
+
+    public readonly struct CommandFileHeader
+    {
+        public readonly int MaxChildren;
+
+        public CommandFileHeader(int maxChildren)
+        {
+            if (maxChildren <= 2)
+                throw new ArgumentException("MaxChildren must be greater than 2", nameof(maxChildren));
+            MaxChildren = maxChildren;
+        }
+    }
+
+    public readonly struct ParseError
+    {
+        public readonly string Message;
+        public readonly int LineNumber;
+
+        public ParseError(string message, int lineNumber)
+        {
+            Message = message;
+            LineNumber = lineNumber;
+        }
+
+        public override string ToString()
+        {
+            return $"Line {LineNumber}: {Message}";
         }
     }
 }

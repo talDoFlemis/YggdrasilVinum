@@ -1,11 +1,11 @@
-using Serilog;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 
 namespace YggdrasilVinum;
 
-static class Program
+internal static class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         // Configure Serilog
         var configuration = new ConfigurationBuilder()

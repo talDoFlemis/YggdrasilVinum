@@ -1,5 +1,3 @@
-using System;
-
 namespace YggdrasilVinum.Models;
 
 public readonly struct WineRecord
