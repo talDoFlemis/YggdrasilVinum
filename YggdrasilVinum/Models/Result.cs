@@ -1,5 +1,3 @@
-using System;
-
 namespace YggdrasilVinum.Models;
 
 public readonly struct Result<TValue, TError>
@@ -25,9 +23,15 @@ public readonly struct Result<TValue, TError>
         _error = error;
     }
 
-    public static Result<TValue, TError> Success(TValue value) => new(value);
+    public static Result<TValue, TError> Success(TValue value)
+    {
+        return new Result<TValue, TError>(value);
+    }
 
-    public static Result<TValue, TError> Error(TError error) => new(error);
+    public static Result<TValue, TError> Error(TError error)
+    {
+        return new Result<TValue, TError>(error);
+    }
 
     public readonly TValue GetValueOrThrow()
     {
