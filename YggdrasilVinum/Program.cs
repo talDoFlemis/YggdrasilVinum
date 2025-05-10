@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 using Microsoft.Extensions.Configuration;
 
 namespace YggdrasilVinum;
