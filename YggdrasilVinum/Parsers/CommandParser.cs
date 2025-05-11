@@ -219,8 +219,8 @@ public static class CommandParser
 
         public CommandFileHeader(int maxChildren)
         {
-            if (maxChildren <= 2)
-                throw new ArgumentException("MaxChildren must be greater than 2", nameof(maxChildren));
+            if (maxChildren <= 1)
+                throw new ArgumentException("MaxChildren must be greater than 1");
             MaxChildren = maxChildren;
         }
     }
