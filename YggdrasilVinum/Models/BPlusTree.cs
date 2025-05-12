@@ -44,7 +44,8 @@ public class BPlusTree<TKey, TValue>(int degree)
     public void Insert(TKey key, TValue value)
     {
         var split = InsertInternal(_root, key, value);
-        if (split == null) return;
+        if (split == null)
+            return;
         var newRoot = new Node { IsLeaf = false };
         newRoot.Keys.Add(split.Item1);
         newRoot.Children.Add(_root);
@@ -63,7 +64,8 @@ public class BPlusTree<TKey, TValue>(int degree)
                 return null;
             }
 
-            if (i == -1) i = node.Keys.Count;
+            if (i == -1)
+                i = node.Keys.Count;
 
             node.Keys.Insert(i, key);
             node.Values.Insert(i, [value]);
@@ -76,7 +78,8 @@ public class BPlusTree<TKey, TValue>(int degree)
             i = i == -1 ? node.Keys.Count : i;
 
             var split = InsertInternal(node.Children[i], key, value);
-            if (split == null) return null;
+            if (split == null)
+                return null;
 
             node.Keys.Insert(i, split.Item1);
             node.Children.Insert(i + 1, split.Item2);
@@ -138,24 +141,25 @@ public class BPlusTree<TKey, TValue>(int degree)
         bTreeStructure += PrintNode(_root, 0);
         bTreeStructure += "\nLeaf Nodes (left to right):\n";
         bTreeStructure += PrintLeafNodes();
-        
+
         Log.Information(bTreeStructure);
     }
 
-    private  string PrintNode(Node node, int level)
+    private string PrintNode(Node node, int level)
     {
         var indent = new string(' ', level * 4);
-        var printNode = $"{indent}Keys: [" + string.Join(", ", node.Keys) + "]\n"; 
+        var printNode = $"{indent}Keys: [" + string.Join(", ", node.Keys) + "]\n";
 
         if (!node.IsLeaf)
             for (var i = 0; i < node.Children.Count; i++)
             {
-                printNode += $"{indent}Child {i}:"; 
+                printNode += $"{indent}Child {i}:";
                 printNode += PrintNode(node.Children[i], level + 1);
             }
         else if (level > 0)
             for (var i = 0; i < node.Keys.Count; i++)
-                printNode += $"{indent}    Key {node.Keys[i]}: Values: [{string.Join(", ", node.Values[i])}]";
+                printNode +=
+                    $"{indent}    Key {node.Keys[i]}: Values: [{string.Join(", ", node.Values[i])}]";
 
         return printNode;
     }
@@ -164,7 +168,8 @@ public class BPlusTree<TKey, TValue>(int degree)
     {
         var printLeafNodes = "";
         var current = _root;
-        while (!current.IsLeaf) current = current.Children[0];
+        while (!current.IsLeaf)
+            current = current.Children[0];
 
         while (current != null)
         {
@@ -179,9 +184,9 @@ public class BPlusTree<TKey, TValue>(int degree)
     private class Node
     {
         public readonly List<Node> Children = [];
-        public bool IsLeaf;
         public readonly List<TKey> Keys = [];
-        public Node? Next;
         public readonly List<List<TValue>> Values = [];
+        public bool IsLeaf;
+        public Node? Next;
     }
 }
