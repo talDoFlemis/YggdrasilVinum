@@ -145,7 +145,7 @@ public class BPlusTree<TKey, TValue>(int degree)
         Log.Information(bTreeStructure);
     }
 
-    private string PrintNode(Node node, int level)
+    private static string PrintNode(Node node, int level)
     {
         var indent = new string(' ', level * 4);
         var printNode = $"{indent}Keys: [" + string.Join(", ", node.Keys) + "]\n";
