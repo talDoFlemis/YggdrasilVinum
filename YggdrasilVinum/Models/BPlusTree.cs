@@ -1,3 +1,5 @@
+using Serilog;
+
 namespace YggdrasilVinum.Models;
 
 public class BPlusTree<TKey, TValue>(int degree)
@@ -132,42 +134,46 @@ public class BPlusTree<TKey, TValue>(int degree)
 
     public void PrintTree()
     {
-        Console.WriteLine("B+ Tree Structure:");
-        PrintNode(_root, 0);
-        Console.WriteLine("\nLeaf Nodes (left to right):");
-        PrintLeafNodes();
+        var bTreeStructure = "B+ Tree Structure:\n";
+        bTreeStructure += PrintNode(_root, 0);
+        bTreeStructure += "\nLeaf Nodes (left to right):\n";
+        bTreeStructure += PrintLeafNodes();
+        
+        Log.Information(bTreeStructure);
     }
 
-    private static void PrintNode(Node node, int level)
+    private  string PrintNode(Node node, int level)
     {
         var indent = new string(' ', level * 4);
-        Console.Write($"{indent}Keys: [");
-        Console.Write(string.Join(", ", node.Keys));
-        Console.WriteLine("]");
+        var printNode = $"{indent}Keys: [" + string.Join(", ", node.Keys) + "]\n"; 
 
         if (!node.IsLeaf)
             for (var i = 0; i < node.Children.Count; i++)
             {
-                Console.WriteLine($"{indent}Child {i}:");
-                PrintNode(node.Children[i], level + 1);
+                printNode += $"{indent}Child {i}:"; 
+                printNode += PrintNode(node.Children[i], level + 1);
             }
         else if (level > 0)
             for (var i = 0; i < node.Keys.Count; i++)
-                Console.WriteLine($"{indent}    Key {node.Keys[i]}: Values: [{string.Join(", ", node.Values[i])}]");
+                printNode += $"{indent}    Key {node.Keys[i]}: Values: [{string.Join(", ", node.Values[i])}]";
+
+        return printNode;
     }
 
-    private void PrintLeafNodes()
+    private string PrintLeafNodes()
     {
+        var printLeafNodes = "";
         var current = _root;
         while (!current.IsLeaf) current = current.Children[0];
 
         while (current != null)
         {
-            Console.Write($"[{string.Join(", ", current.Keys)}] -> ");
+            printLeafNodes += $"[{string.Join(", ", current.Keys)}] -> ";
             current = current.Next;
         }
 
-        Console.WriteLine("null");
+        printLeafNodes += "null\n";
+        return printLeafNodes;
     }
 
     private class Node
