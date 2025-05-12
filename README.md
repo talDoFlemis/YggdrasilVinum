@@ -49,4 +49,5 @@ dotnet tool install -g JetBrains.ReSharper.GlobalTools
 jb cleanupcode YggdrasilVinum.sln --profile="Built-in: Full Cleanup"
 ```
 
-The project uses `.editorconfig` to maintain consistent code style. JetBrains Rider automatically applies these settings.
+The project uses `.editorconfig` to maintain consistent code style. JetBrains Rider automatically applies these
+settings.

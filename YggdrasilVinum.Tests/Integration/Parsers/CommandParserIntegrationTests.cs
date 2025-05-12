@@ -1,4 +1,3 @@
-using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Tests.Unit.Parsers;
 
@@ -128,7 +127,7 @@ public class CommandParserIntegrationTests
             (CommandParser.CommandType.Insert, 103)
         };
         var mockFilePath = CreateTempFileWithContent(
-            CommandParserTestHelper.GenerateTestCommandContent(testCommands, 10));
+            CommandParserTestHelper.GenerateTestCommandContent(testCommands));
 
         try
         {
@@ -228,13 +227,11 @@ public class CommandParserIntegrationTests
     {
         // Arrange
         var largeDataset = new List<(CommandParser.CommandType Type, int Key)>();
-        for (int i = 1; i <= 1000; i++)
-        {
+        for (var i = 1; i <= 1000; i++)
             largeDataset.Add((i % 2 == 0 ? CommandParser.CommandType.Insert : CommandParser.CommandType.Search, i));
-        }
-        
+
         var mockFilePath = CreateTempFileWithContent(
-            CommandParserTestHelper.GenerateTestCommandContent(largeDataset, 10));
+            CommandParserTestHelper.GenerateTestCommandContent(largeDataset));
 
         try
         {
@@ -246,7 +243,7 @@ public class CommandParserIntegrationTests
             var (header, commands) = result.GetValueOrThrow();
             Assert.Equal(10, header.MaxChildren);
             Assert.Equal(1000, commands.Count);
-            
+
             // Check a few random commands
             Assert.Equal(CommandParser.CommandType.Search, commands[0].Type);
             Assert.Equal(1, commands[0].Key);

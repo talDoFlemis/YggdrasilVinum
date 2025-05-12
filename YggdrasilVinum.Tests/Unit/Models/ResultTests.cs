@@ -36,6 +36,7 @@ public class ResultTests
 
         // Act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() => result.GetValueOrThrow());
+
         Assert.Contains("Cannot get value from error result", exception.Message);
     }
 

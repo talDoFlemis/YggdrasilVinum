@@ -219,13 +219,11 @@ public class CommandParserTests
         // Arrange
         const int commandCount = 100;
         var largeDataset = new List<(CommandParser.CommandType Type, int Key)>(commandCount);
-        
+
         for (var i = 0; i < commandCount; i++)
-        {
             largeDataset.Add((i % 2 == 0 ? CommandParser.CommandType.Insert : CommandParser.CommandType.Search, i));
-        }
-        
-        var largeDatasetContent = CommandParserTestHelper.GenerateTestCommandContent(largeDataset, 10);
+
+        var largeDatasetContent = CommandParserTestHelper.GenerateTestCommandContent(largeDataset);
 
         // Act
         var result = CommandParser.ParseCommandsFromString(largeDatasetContent);
@@ -234,7 +232,7 @@ public class CommandParserTests
         Assert.True(result.IsSuccess);
         var (_, commands) = result.GetValueOrThrow();
         Assert.Equal(commandCount, commands.Count);
-        
+
         for (var i = 0; i < commandCount; i++)
         {
             Assert.Equal(largeDataset[i].Type, commands[i].Type);

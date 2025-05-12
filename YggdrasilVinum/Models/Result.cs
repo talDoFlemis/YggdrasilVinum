@@ -74,3 +74,8 @@ public readonly struct Result<TValue, TError>
         return IsSuccess ? binder(_value) : Result<TNew, TError>.Error(_error);
     }
 }
+
+public readonly struct Unit
+{
+    public static Unit Value => default;
+}

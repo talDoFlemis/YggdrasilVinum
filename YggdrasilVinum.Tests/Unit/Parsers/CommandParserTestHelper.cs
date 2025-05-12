@@ -15,7 +15,8 @@ public static class CommandParserTestHelper
         (CommandParser.CommandType.Insert, 505)
     };
 
-    public static string GenerateTestCommandContent(IEnumerable<(CommandParser.CommandType Type, int Key)> entries, int maxChildren = 10)
+    public static string GenerateTestCommandContent(IEnumerable<(CommandParser.CommandType Type, int Key)> entries,
+        int maxChildren = 10)
     {
         using var stringWriter = new StringWriter();
         stringWriter.WriteLine($"FLH/{maxChildren}");
@@ -39,7 +40,7 @@ public static class CommandParserTestHelper
         IEnumerable<(CommandParser.CommandType Type, int Key)> entries)
     {
         var commands = new List<CommandParser.Command>();
-        foreach (var entry in entries) 
+        foreach (var entry in entries)
             commands.Add(new CommandParser.Command(entry.Type, entry.Key));
         return commands;
     }
