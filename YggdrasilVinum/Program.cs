@@ -22,8 +22,7 @@ internal static class Program
             // Argument for wine data file
             var wineDataArgument = new Argument<FileInfo?>(
                 "wine-data",
-                "Path to the wine data CSV file that will be parsed")
-            { Arity = ArgumentArity.ZeroOrOne };
+                "Path to the wine data CSV file that will be parsed") { Arity = ArgumentArity.ZeroOrOne };
             wineDataArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/wines.csv"));
             rootCommand.AddArgument(wineDataArgument);
 
@@ -37,8 +36,7 @@ internal static class Program
             // Argument for commands input file
             var commandsArgument = new Argument<FileInfo?>(
                 "commands-file",
-                "Path to the file containing commands, or omit to use stdin")
-            { Arity = ArgumentArity.ZeroOrOne };
+                "Path to the file containing commands, or omit to use stdin") { Arity = ArgumentArity.ZeroOrOne };
             rootCommand.AddArgument(commandsArgument);
 
             // Option for starting a REPL
