@@ -1,6 +1,6 @@
+using FluentAssertions;
 using Moq;
 using Serilog;
-using FluentAssertions;
 using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Services;
@@ -10,9 +10,9 @@ namespace YggdrasilVinum.Tests.Unit.Services;
 
 public class InsertProcessorTests
 {
+    private readonly InsertProcessor _insertProcessor;
     private readonly Mock<IBufferManager> _mockBufferManager;
     private readonly Mock<IFileManager> _mockFileManager;
-    private readonly InsertProcessor _insertProcessor;
     private readonly WineRecord _testRecord;
 
     public InsertProcessorTests()
@@ -44,7 +44,7 @@ public class InsertProcessorTests
             .ReturnsAsync(Result<bool, StoreError>.Success(true));
 
         _mockBufferManager.Setup(m => m.PutPageAsync(It.Is<Page>(p =>
-            p.PageId == pageId && p.Content.Contains(_testRecord))))
+                p.PageId == pageId && p.Content.Contains(_testRecord))))
             .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BufferError>.Success(YggdrasilVinum.Models.Unit.Value));
 
         // Act
@@ -76,7 +76,7 @@ public class InsertProcessorTests
             .ReturnsAsync(Result<Page, StoreError>.Success(newPage));
 
         _mockBufferManager.Setup(m => m.PutPageAsync(It.Is<Page>(p =>
-            p.PageId == newPageId && p.Content.Contains(_testRecord))))
+                p.PageId == newPageId && p.Content.Contains(_testRecord))))
             .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BufferError>.Success(YggdrasilVinum.Models.Unit.Value));
 
         // Act
@@ -103,7 +103,8 @@ public class InsertProcessorTests
         // Assert
         result.IsError.Should().BeTrue();
         result.GetErrorOrThrow().Message.Should().Contain("Failed to get random page");
-        _mockFileManager.Verify(m => m.PageHasEnoughSpaceToInsertRecord(It.IsAny<Page>(), It.IsAny<WineRecord>()), Times.Never);
+        _mockFileManager.Verify(m => m.PageHasEnoughSpaceToInsertRecord(It.IsAny<Page>(), It.IsAny<WineRecord>()),
+            Times.Never);
     }
 
     [Fact]

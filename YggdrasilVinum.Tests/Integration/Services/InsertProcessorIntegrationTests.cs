@@ -133,7 +133,7 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         var insertProcessor = new InsertProcessor(bufferManager, fileManager);
 
         // Insert many records with long names to fill the page
-        for (int i = 1; i <= 9; i++)
+        for (var i = 1; i <= 9; i++)
         {
             var record = new WineRecord(
                 i,
@@ -186,7 +186,7 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         var insertProcessor = new InsertProcessor(bufferManager, fileManager);
 
         // Insert some records
-        for (int i = 1; i <= 5; i++)
+        for (var i = 1; i <= 5; i++)
         {
             var record = new WineRecord(i, $"Wine {i}", 2020 + i, WineType.Red);
             var result = await insertProcessor.ExecuteAsync(record);

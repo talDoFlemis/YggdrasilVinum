@@ -33,9 +33,7 @@ public class InsertProcessor(
 
         var hasSpaceResult = await PageHasEnoughSpaceToInsertRecord(page, record);
         if (hasSpaceResult.IsError)
-        {
             return await Task.FromResult(Result<Unit, InsertError>.Error(hasSpaceResult.GetErrorOrThrow()));
-        }
 
         var hasSpace = hasSpaceResult.GetValueOrThrow();
 
@@ -43,9 +41,7 @@ public class InsertProcessor(
         {
             var allocateNewPageResult = await AllocateNewPage();
             if (allocateNewPageResult.IsError)
-            {
                 return await Task.FromResult(Result<Unit, InsertError>.Error(allocateNewPageResult.GetErrorOrThrow()));
-            }
 
             page = allocateNewPageResult.GetValueOrThrow();
         }

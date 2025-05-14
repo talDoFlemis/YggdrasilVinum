@@ -21,7 +21,7 @@ public sealed class LruBufferManagerTests : IDisposable
             .CreateLogger();
 
         _fileManagerMock = new Mock<IFileManager>();
-        _bufferManager = new LruBufferManager(_fileManagerMock.Object, 2, 1);
+        _bufferManager = new LruBufferManager(_fileManagerMock.Object);
     }
 
     public void Dispose()

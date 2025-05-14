@@ -314,15 +314,13 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
 
         // Fill the page with many records to consume space
         var wineRecords = new List<WineRecord>();
-        for (int i = 0; i < 20; i++)
-        {
+        for (var i = 0; i < 20; i++)
             wineRecords.Add(new WineRecord(
                 i,
                 $"Wine with a very long name to consume space {i}",
                 2000 + i,
                 WineType.Red
             ));
-        }
         page.Content = wineRecords.ToArray();
 
         // Create a new record to insert (also with a long name)

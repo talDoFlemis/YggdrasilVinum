@@ -6,7 +6,7 @@ namespace YggdrasilVinum.Services;
 public class Database(InsertProcessor insertProcessor, EqualitySearchProcessor equalitySearchProcessor)
 {
     private readonly ILogger _logger = Log.ForContext<Database>();
-    private ulong _recordsInserted = 0;
+    private ulong _recordsInserted;
 
     public async Task<Result<Unit, InsertError>> InsertAsync(
         WineRecord record

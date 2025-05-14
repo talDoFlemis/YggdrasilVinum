@@ -2,11 +2,6 @@ namespace YggdrasilVinum.Models;
 
 public record struct WineRecord
 {
-    public int WineId { get; set; }
-    public string Label { get; set; }
-    public int HarvestYear { get; set; }
-    public WineType Type { get; set; }
-
     public WineRecord(int wineId, string label, int harvestYear, WineType type)
     {
         if (string.IsNullOrWhiteSpace(label))
@@ -19,6 +14,11 @@ public record struct WineRecord
         HarvestYear = harvestYear;
         Type = type;
     }
+
+    public int WineId { get; set; }
+    public string Label { get; set; }
+    public int HarvestYear { get; set; }
+    public WineType Type { get; set; }
 }
 
 public enum WineType

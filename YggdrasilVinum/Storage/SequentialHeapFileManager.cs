@@ -252,18 +252,17 @@ public sealed class SequentialHeapFileManager(
 
             var tempPage = new Page(page.PageId, tempContent.ToArray())
             {
-                IsDirty = page.IsDirty,
-                LastAccessed = page.LastAccessed
+                IsDirty = page.IsDirty, LastAccessed = page.LastAccessed
             };
 
             // Serialize to calculate size
             var jsonData = JsonSerializer.Serialize(tempPage);
             var serializedSize = Encoding.UTF8.GetByteCount(jsonData);
 
-            bool hasEnoughSpace = (ulong)serializedSize <= pageSizeInBytes;
+            var hasEnoughSpace = (ulong)serializedSize <= pageSizeInBytes;
 
             _logger.Debug("Page {PageId} serialized size with new record would be {Size} bytes " +
-                         "({HasSpace} for page size limit of {PageSize} bytes)",
+                          "({HasSpace} for page size limit of {PageSize} bytes)",
                 page.PageId, serializedSize,
                 hasEnoughSpace ? "enough space" : "not enough space",
                 pageSizeInBytes);
@@ -375,10 +374,7 @@ public sealed class SequentialHeapFileManager(
             _fileStream = fs;
 
             var allocateResult = await AllocateNewPageAsync();
-            if (allocateResult.IsError)
-            {
-                return Result<Unit, StoreError>.Error(allocateResult.GetErrorOrThrow());
-            }
+            if (allocateResult.IsError) return Result<Unit, StoreError>.Error(allocateResult.GetErrorOrThrow());
         }
         catch (Exception e)
         {
@@ -440,4 +436,3 @@ internal class HeapFileMetadata
     public DateTime CreatedAt { get; set; }
     public DateTime LastModifiedAt { get; set; }
 }
-

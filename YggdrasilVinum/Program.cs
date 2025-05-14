@@ -113,7 +113,6 @@ internal static class Program
             {
                 var error = result.GetErrorOrThrow();
                 Log.Error("Error inserting wine: {ErrorMessage}", error.Message);
-                continue;
             }
         }
 
@@ -139,11 +138,8 @@ internal static class Program
 
         // Print and process each command
         foreach (var command in commands)
-        {
             Log.Information("Processing command: {CommandType} with key: {CommandKey}", command.Type, command.Key);
-            // ProcessCommand(command, bPlusTree, wines, console);
-        }
-
+        // ProcessCommand(command, bPlusTree, wines, console);
 
         var bufferFlushResult = await bufferManager.FlushAllFramesAsync();
         if (bufferFlushResult.IsError)
@@ -158,7 +154,6 @@ internal static class Program
             var error = heapFlushResult.GetErrorOrThrow();
             Log.Error("Error flushing heap: {ErrorMessage}", error.Message);
         }
-
     }
 
     private static void ProcessCommand(CommandParser.Command command, BPlusTree<int, WineRecord> bPlusTree,
