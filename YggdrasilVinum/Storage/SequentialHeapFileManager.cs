@@ -232,6 +232,44 @@ public sealed class SequentialHeapFileManager(
         return await Task.FromResult(Result<Unit, StoreError>.Success(Unit.Value));
     }
 
+    public async Task<Result<bool, StoreError>> PageHasEnoughSpaceToInsertRecord(Page page, WineRecord newRecord)
+    {
+        _logger.Debug("Checking if page {PageId} has enough space to insert record", page.PageId);
+
+        try
+        {
+            // Create a copy of the page and add the new record to estimate its size
+            var tempContent = page.Content.ToList();
+            tempContent.Add(newRecord);
+
+            var tempPage = new Page(page.PageId, tempContent.ToArray())
+            {
+                IsDirty = page.IsDirty,
+                LastAccessed = page.LastAccessed
+            };
+
+            // Serialize to calculate size
+            var jsonData = JsonSerializer.Serialize(tempPage);
+            var serializedSize = Encoding.UTF8.GetByteCount(jsonData);
+
+            bool hasEnoughSpace = (ulong)serializedSize <= pageSizeInBytes;
+
+            _logger.Debug("Page {PageId} serialized size with new record would be {Size} bytes " +
+                         "({HasSpace} for page size limit of {PageSize} bytes)",
+                page.PageId, serializedSize,
+                hasEnoughSpace ? "enough space" : "not enough space",
+                pageSizeInBytes);
+
+            return await Task.FromResult(Result<bool, StoreError>.Success(hasEnoughSpace));
+        }
+        catch (Exception e)
+        {
+            _logger.Error("Error checking page space capacity: {Error}", e.Message);
+            return await Task.FromResult(Result<bool, StoreError>
+                .Error(new StoreError($"Failed to check page space: {e.Message}")));
+        }
+    }
+
     private Result<Unit, StoreError> CreateDirectory()
     {
         _logger.Debug("Creating storage directory: {StoragePath}", storagePath);
@@ -394,3 +432,4 @@ internal class HeapFileMetadata
     public DateTime CreatedAt { get; set; }
     public DateTime LastModifiedAt { get; set; }
 }
+

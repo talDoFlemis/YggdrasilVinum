@@ -269,4 +269,101 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         Assert.True(existsResult.IsSuccess);
         Assert.True(existsResult.GetValueOrThrow());
     }
+
+    [Fact]
+    public async Task PageHasEnoughSpaceToInsertRecord_ReturnsTrueWhenEnoughSpace()
+    {
+        // Arrange
+        var tempDir = CreateTempDirectory();
+        var pageSize = 1024UL;
+        var fileManager = new SequentialHeapFileManager(tempDir, 1024 * 10, pageSize);
+        await fileManager.InitializeAsync();
+
+        var allocateResult = await fileManager.AllocateNewPageAsync();
+        var page = allocateResult.GetValueOrThrow();
+
+        // Add a few records to the page, but not too many
+        page.Content = new[]
+        {
+            new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Red),
+            new WineRecord(2, "Merlot", 2019, WineType.Red)
+        };
+
+        // Create a new record to insert
+        var newRecord = new WineRecord(3, "Chardonnay", 2020, WineType.White);
+
+        // Act
+        var result = await fileManager.PageHasEnoughSpaceToInsertRecord(page, newRecord);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.True(result.GetValueOrThrow(), "Page should have enough space for a new record");
+    }
+
+    [Fact]
+    public async Task PageHasEnoughSpaceToInsertRecord_ReturnsFalseWhenNotEnoughSpace()
+    {
+        // Arrange
+        var tempDir = CreateTempDirectory();
+        var pageSize = 512UL; // Using a small page size to ensure we run out of space quickly
+        var fileManager = new SequentialHeapFileManager(tempDir, 1024 * 10, pageSize);
+        await fileManager.InitializeAsync();
+
+        var allocateResult = await fileManager.AllocateNewPageAsync();
+        var page = allocateResult.GetValueOrThrow();
+
+        // Fill the page with many records to consume space
+        var wineRecords = new List<WineRecord>();
+        for (int i = 0; i < 20; i++)
+        {
+            wineRecords.Add(new WineRecord(
+                i,
+                $"Wine with a very long name to consume space {i}",
+                2000 + i,
+                WineType.Red
+            ));
+        }
+        page.Content = wineRecords.ToArray();
+
+        // Create a new record to insert (also with a long name)
+        var newRecord = new WineRecord(
+            100,
+            "This is a very long wine name that will help exceed the page size limit when added to existing records",
+            2021,
+            WineType.White
+        );
+
+        // Act
+        var result = await fileManager.PageHasEnoughSpaceToInsertRecord(page, newRecord);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.False(result.GetValueOrThrow(), "Page should not have enough space for a new record");
+    }
+
+    [Fact]
+    public async Task PageHasEnoughSpaceToInsertRecord_WorksWithEmptyPage()
+    {
+        // Arrange
+        var tempDir = CreateTempDirectory();
+        var pageSize = 512UL;
+        var fileManager = new SequentialHeapFileManager(tempDir, 1024 * 10, pageSize);
+        await fileManager.InitializeAsync();
+
+        var allocateResult = await fileManager.AllocateNewPageAsync();
+        var page = allocateResult.GetValueOrThrow();
+
+        // Page is empty (has no records)
+        page.Content = Array.Empty<WineRecord>();
+
+        // Create a new record to insert
+        var newRecord = new WineRecord(1, "First Wine", 2020, WineType.Red);
+
+        // Act
+        var result = await fileManager.PageHasEnoughSpaceToInsertRecord(page, newRecord);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.True(result.GetValueOrThrow(), "Empty page should have enough space for a new record");
+    }
 }

@@ -10,6 +10,7 @@ public interface IFileManager
     Task<Result<bool, StoreError>> PageExistsAsync(ulong pageId);
     Task<Result<Page, StoreError>> AllocateNewPageAsync();
     Task<Result<Unit, StoreError>> FlushAsync();
+    Task<Result<bool, StoreError>> PageHasEnoughSpaceToInsertRecord(Page page, WineRecord newRecord);
 }
 
 public readonly struct StoreError
