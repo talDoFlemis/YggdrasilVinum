@@ -1,11 +1,11 @@
 namespace YggdrasilVinum.Models;
 
-public readonly struct WineRecord
+public struct WineRecord
 {
-    public readonly int WineId;
-    public readonly string Label;
-    public readonly int HarvestYear;
-    public readonly WineType Type;
+    public int WineId { get; set; }
+    public string Label { get; set; }
+    public int HarvestYear { get; set; }
+    public WineType Type { get; set; }
 
     public WineRecord(int wineId, string label, int harvestYear, WineType type)
     {
