@@ -20,12 +20,20 @@ public sealed class SequentialHeapFileManager(
 
     public async ValueTask DisposeAsync()
     {
-        if (_fileStream != null) await _fileStream.DisposeAsync();
+        if (_fileStream != null)
+        {
+            await _fileStream.FlushAsync();
+            await _fileStream.DisposeAsync();
+        }
     }
 
     public void Dispose()
     {
-        _fileStream?.Dispose();
+        if (_fileStream != null)
+        {
+            _fileStream.Flush();
+            _fileStream?.Dispose();
+        }
     }
 
     public async Task<Result<Unit, StoreError>> InitializeAsync()
