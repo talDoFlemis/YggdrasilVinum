@@ -1,6 +1,6 @@
 namespace YggdrasilVinum.Models;
 
-public struct WineRecord
+public record struct WineRecord
 {
     public int WineId { get; set; }
     public string Label { get; set; }
