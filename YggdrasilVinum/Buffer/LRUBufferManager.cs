@@ -98,6 +98,13 @@ public sealed class LruBufferManager
                 new BufferError($"Failed to check if page exists on file manager {result.GetErrorOrThrow()}")));
         }
 
+        if (!result.GetValueOrThrow())
+        {
+            _logger.Error("Page {PageId} does not exist in file manager", pageId);
+            return await Task.FromResult(Result<Page, BufferError>.Error(
+                new BufferError($"Page {pageId} does not exist in file manager")));
+        }
+
         var pageResult = await _fileManager.ReadPageAsync(pageId);
         if (pageResult.IsError)
         {
