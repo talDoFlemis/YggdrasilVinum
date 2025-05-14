@@ -4,6 +4,7 @@ namespace YggdrasilVinum.Models;
 
 public class BPlusTreeFile<TKey, TValue>
     where TKey : IComparable<TKey>
+    where TValue : IParsable<TValue>
 {
     private readonly string _dataFilePath;
     private readonly int _degree;
@@ -154,13 +155,13 @@ public class BPlusTreeFile<TKey, TValue>
         File.WriteAllLines(_indexFilePath, allLines);
     }
 
-    private string AppendToDataFile(TValue value)
+    private string AppendToDataFile(TValue? value)
     {
         var offset = new FileInfo(_dataFilePath).Length;
 
         using (var writer = new StreamWriter(_dataFilePath, true))
         {
-            writer.WriteLine(value.ToString());
+            writer.WriteLine(value?.ToString());
         }
 
         return $"OFFSET:{offset}";
@@ -176,8 +177,7 @@ public class BPlusTreeFile<TKey, TValue>
         using var reader = new StreamReader(_dataFilePath);
         reader.BaseStream.Seek(offset, SeekOrigin.Begin);
         var line = reader.ReadLine();
-
-        return (TValue)Convert.ChangeType(line, typeof(TValue));
+        return TValue.Parse(line, null);
     }
 
     public List<TValue> Search(TKey key)
