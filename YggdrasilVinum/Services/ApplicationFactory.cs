@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
+using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum.Services;
 
@@ -65,5 +67,23 @@ public static class ApplicationFactory
         }
 
         return bPlusTree;
+    }
+
+
+    public static IFileManager CreateFileManager(string storagePath, ulong heapSizeInBytes, ulong pageSizeInBytes)
+    {
+        var sequentialFileManager = new SequentialHeapFileManager(storagePath, heapSizeInBytes, pageSizeInBytes);
+
+        return sequentialFileManager;
+    }
+
+    public static IBufferManager CreateBufferManager(
+        IFileManager fileManager,
+        ulong amountOfPageFrames,
+        ulong amountOfIndexFrames
+    )
+    {
+        var bufferManager = new LruBufferManager(fileManager, amountOfPageFrames, amountOfIndexFrames);
+        return bufferManager;
     }
 }

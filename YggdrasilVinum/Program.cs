@@ -86,20 +86,37 @@ internal static class Program
         var wines = wineResult.GetValueOrThrow();
         Log.Information("Successfully parsed {Count} wine records", wines.Count);
 
-        // Print each wine record
-        foreach (var wine in wines)
-            Log.Debug("Found Wine ID: {WineId}, Label: {Label}, Harvest Year: {HarvestYear}, Type: {Type}", wine.WineId,
-                wine.Label, wine.HarvestYear, wine.Type);
+        var heapSizeInBytes = (ulong)40 * 1024 * 1024; // 40 MB
+        var pageSizeInBytes = (ulong)pageSize * 1024; // 1 KB
+        var fileManager = ApplicationFactory.CreateFileManager("./storage", heapSizeInBytes, pageSizeInBytes);
 
-        // Create a B+ Tree with the wines data
-        var bPlusTree = new BPlusTree<int, WineRecord>(pageSize);
+        (await fileManager.InitializeAsync()).GetValueOrThrow();
 
-        // Insert all wines into the B+ tree
+        var amountOfPageFrames = 1UL;
+        var amountOfIndexFrames = 1UL;
+        var bufferManager =
+            ApplicationFactory.CreateBufferManager(fileManager, amountOfPageFrames, amountOfIndexFrames);
+
+        (await bufferManager.InitializeAsync()).GetValueOrThrow();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager);
+        var equalityProcessor = new EqualitySearchProcessor();
+
+
+        var database = new Database(insertProcessor, equalityProcessor);
+
+
         foreach (var wine in wines)
         {
-            bPlusTree.Insert(wine.WineId, wine);
-            Log.Information("Inserted wine: {WineId} - {Label}", wine.WineId, wine.Label);
+            var result = await database.InsertAsync(wine);
+            if (result.IsError)
+            {
+                var error = result.GetErrorOrThrow();
+                Log.Error("Error inserting wine: {ErrorMessage}", error.Message);
+            }
         }
+
+        Log.Information("Inserted {Count} wine records into the database", database.GetRecordsInsertedCount());
 
 
         if (commandsFile == null)
@@ -121,9 +138,21 @@ internal static class Program
 
         // Print and process each command
         foreach (var command in commands)
-        {
             Log.Information("Processing command: {CommandType} with key: {CommandKey}", command.Type, command.Key);
-            ProcessCommand(command, bPlusTree, wines, console);
+        // ProcessCommand(command, bPlusTree, wines, console);
+
+        var bufferFlushResult = await bufferManager.FlushAllFramesAsync();
+        if (bufferFlushResult.IsError)
+        {
+            var error = bufferFlushResult.GetErrorOrThrow();
+            Log.Error("Error flushing buffer: {ErrorMessage}", error.Message);
+        }
+
+        var heapFlushResult = await fileManager.FlushAsync();
+        if (heapFlushResult.IsError)
+        {
+            var error = heapFlushResult.GetErrorOrThrow();
+            Log.Error("Error flushing heap: {ErrorMessage}", error.Message);
         }
     }
 
