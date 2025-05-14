@@ -28,14 +28,14 @@ public sealed class SequentialHeapFileManager(
         _fileStream?.Dispose();
     }
 
-    public Task<Result<Unit, StoreError>> InitializeAsync()
+    public async Task<Result<Unit, StoreError>> InitializeAsync()
     {
         _logger.Debug("Initializing file storage manager with path: {StoragePath}", storagePath);
 
         if (!Directory.Exists(storagePath))
         {
             var result = CreateDirectory();
-            if (result.IsError) return Task.FromResult(result);
+            if (result.IsError) return await Task.FromResult(result);
         }
 
         var heapMetadataFilePath = Path.Combine(storagePath, _metadataFile);
@@ -46,23 +46,23 @@ public sealed class SequentialHeapFileManager(
         if (!File.Exists(heapMetadataFilePath))
         {
             var result = CreateHeapMetadataFile(heapMetadataFilePath);
-            if (result.IsError) return Task.FromResult(result);
+            if (result.IsError) return await Task.FromResult(result);
 
-            result = CreateHeapFile(heapFilePath);
-            if (result.IsError) return Task.FromResult(result);
+            result = await CreateHeapFile(heapFilePath);
+            if (result.IsError) return await Task.FromResult(result);
         }
 
         _logger.Debug("Heap file exists or was created, unmarshalling it...");
 
         var unmarshalResult = UnmarshalHeapMetadataFile(heapMetadataFilePath);
-        if (unmarshalResult.IsError) return Task.FromResult(unmarshalResult);
+        if (unmarshalResult.IsError) return await Task.FromResult(unmarshalResult);
 
         var openResult = OpenHeapFile(heapFilePath);
-        if (openResult.IsError) return Task.FromResult(openResult);
+        if (openResult.IsError) return await Task.FromResult(openResult);
 
 
         _logger.Information("File storage manager initialized successfully");
-        return Task.FromResult(Result<Unit, StoreError>.Success(Unit.Value));
+        return await Task.FromResult(Result<Unit, StoreError>.Success(Unit.Value));
     }
 
     public async Task<Result<Page, StoreError>> ReadPageAsync(ulong pageId)
@@ -266,6 +266,7 @@ public sealed class SequentialHeapFileManager(
                 CreatedAt = DateTime.UtcNow,
                 LastModifiedAt = DateTime.UtcNow
             };
+            _heapFileMetadata = metadata;
 
             var jsonMetadata =
                 JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
@@ -317,18 +318,21 @@ public sealed class SequentialHeapFileManager(
         }
     }
 
-    private Result<Unit, StoreError> CreateHeapFile(string heapFilePath)
+    private async Task<Result<Unit, StoreError>> CreateHeapFile(string heapFilePath)
     {
         _logger.Debug("Creating heap file in path: {HeapFilePath}", heapFilePath);
 
         try
         {
-            using (var fs = new FileStream(heapFilePath, FileMode.Create, FileAccess.Write))
-            {
-                fs.SetLength((long)heapSizeInBytes);
-            }
+            await using var fs = new FileStream(heapFilePath, FileMode.Create, FileAccess.Write);
+            fs.SetLength((long)heapSizeInBytes);
+            _fileStream = fs;
 
-            _logger.Information("Heap file created successfully: {HeapFilePath}", heapFilePath);
+            var allocateResult = await AllocateNewPageAsync();
+            if (allocateResult.IsError)
+            {
+                return Result<Unit, StoreError>.Error(allocateResult.GetErrorOrThrow());
+            }
         }
         catch (Exception e)
         {
@@ -337,7 +341,7 @@ public sealed class SequentialHeapFileManager(
                 new StoreError($"Failed to create heap file: {e.Message}"));
         }
 
-        _logger.Debug("Heap file created successfully: {HeapFilePath}", heapFilePath);
+        _logger.Information("Heap file created successfully: {HeapFilePath}", heapFilePath);
         return Result<Unit, StoreError>.Success(Unit.Value);
     }
 

@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Serilog;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Storage;
@@ -56,6 +57,10 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.True(File.Exists(Path.Combine(tempDir, "heap_metadata.ygg")));
         Assert.True(File.Exists(Path.Combine(tempDir, "heap.ygg")));
+
+        var firstPageResult = await fileManager.ReadPageAsync(1L);
+        Assert.True(firstPageResult.IsSuccess);
+        firstPageResult.GetValueOrThrow().PageId.Should().Be(1);
     }
 
     [Theory]
@@ -78,9 +83,9 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         Assert.True(result1.IsSuccess);
         Assert.True(result2.IsSuccess);
         Assert.True(result3.IsSuccess);
-        Assert.Equal(1UL, result1.GetValueOrThrow().PageId);
-        Assert.Equal(2UL, result2.GetValueOrThrow().PageId);
-        Assert.Equal(3UL, result3.GetValueOrThrow().PageId);
+        Assert.Equal(2UL, result1.GetValueOrThrow().PageId);
+        Assert.Equal(3UL, result2.GetValueOrThrow().PageId);
+        Assert.Equal(4UL, result3.GetValueOrThrow().PageId);
     }
 
     [Theory]
