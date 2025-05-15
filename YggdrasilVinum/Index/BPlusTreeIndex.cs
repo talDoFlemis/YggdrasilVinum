@@ -5,12 +5,13 @@ using YggdrasilVinum.Models;
 
 namespace YggdrasilVinum.Index;
 
-public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
+public class BPlusTreeIndex<TKey, TValue> : IBPlusTreeIndex<TKey, TValue>
     where TKey : IComparable<TKey>
+    where TValue : IParsable<TValue>
 {
     private readonly int _degree;
     private readonly string _indexFilePath;
-    private readonly ILogger _logger = Log.ForContext<BPlusTreeIndex<TKey>>();
+    private readonly ILogger _logger = Log.ForContext<BPlusTreeIndex<TKey, TValue>>();
     private int _height;
     private int _nextId;
     private int _rootId;
@@ -36,7 +37,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
                 IsLeaf = true,
                 Keys = [],
                 Children = [],
-                PageIds = [],
+                RIDs = [],
                 Next = -1
             };
 
@@ -61,12 +62,12 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
         return await Task.FromResult(Result<Unit, BPlusTreeError>.Success(Unit.Value));
     }
 
-    public async Task<Result<List<ulong>, BPlusTreeError>> SearchAsync(TKey key)
+    public async Task<Result<List<TValue>, BPlusTreeError>> SearchAsync(TKey key)
     {
         try
         {
             var rootNode = await LoadNodeAsync(_rootId);
-            List<ulong> result = [];
+            List<TValue> result = [];
 
             var current = rootNode;
 
@@ -86,33 +87,33 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
                     switch (comparison)
                     {
                         case 0:
-                            result.Add(current.PageIds[i]);
+                            result.Add(current.RIDs[i]);
                             break;
                         case > 0:
-                            return Result<List<ulong>, BPlusTreeError>.Success(result);
+                            return Result<List<TValue>, BPlusTreeError>.Success(result);
                     }
                 }
 
                 current = current.Next != -1 ? await LoadNodeAsync(current.Next) : null;
             }
 
-            return Result<List<ulong>, BPlusTreeError>.Success(result);
+            return Result<List<TValue>, BPlusTreeError>.Success(result);
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Error searching for key {Key} in B+ tree", key);
-            return Result<List<ulong>, BPlusTreeError>.Error(
+            return Result<List<TValue>, BPlusTreeError>.Error(
                 new BPlusTreeError($"Failed to search for key: {ex.Message}"));
         }
     }
 
-    public async Task<Result<Unit, BPlusTreeError>> InsertAsync(TKey key, ulong pageID)
+    public async Task<Result<Unit, BPlusTreeError>> InsertAsync(TKey key, TValue rid)
     {
         try
         {
             var rootNode = await LoadNodeAsync(_rootId);
 
-            var splitResult = await InsertInternalAsync(rootNode, key, pageID);
+            var splitResult = await InsertInternalAsync(rootNode, key, rid);
             if (splitResult == null)
                 return Result<Unit, BPlusTreeError>.Success(new Unit());
 
@@ -122,7 +123,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
                 IsLeaf = false,
                 Keys = [splitResult.Item1],
                 Children = [rootNode.Id, splitResult.Item2.Id],
-                PageIds = []
+                RIDs = []
             };
 
             _rootId = newRoot.Id;
@@ -135,7 +136,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error inserting key {Key} with pageID {PageID} in B+ tree", key, pageID);
+            _logger.Error(ex, "Error inserting key {@Key} with rid {@PageID} in B+ tree", key, rid);
             return Result<Unit, BPlusTreeError>.Error(new BPlusTreeError($"Failed to insert key: {ex.Message}"));
         }
     }
@@ -223,9 +224,9 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
                 {
                     var valuesPart = parts[3].Trim();
                     var valuesStr = valuesPart.Substring(valuesPart.IndexOf('=') + 1);
-                    node.PageIds = string.IsNullOrEmpty(valuesStr)
-                        ? new List<ulong>()
-                        : valuesStr.Split(',').Select(ulong.Parse).ToList();
+                    node.RIDs = string.IsNullOrEmpty(valuesStr)
+                        ? []
+                        : valuesStr.Split(',').Select(v => TValue.Parse(v, null)).ToList();
 
                     var nextPart = parts[4].Trim();
                     var nextStr = nextPart.Substring(nextPart.IndexOf('=') + 1);
@@ -255,7 +256,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
             sb.Append($"NODE {node.Id} | LEAF=true | KEYS=");
             sb.Append(string.Join(",", node.Keys));
             sb.Append(" | VALUES=");
-            sb.Append(string.Join(",", node.PageIds));
+            sb.Append(string.Join(",", node.RIDs));
             sb.Append(" | NEXT=");
             sb.Append(node.Next == -1 ? "null" : node.Next.ToString());
         }
@@ -281,7 +282,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
         await File.WriteAllLinesAsync(_indexFilePath, linesList);
     }
 
-    private async Task<Tuple<TKey, Node>?> InsertInternalAsync(Node node, TKey key, ulong valueOffset)
+    private async Task<Tuple<TKey, Node>?> InsertInternalAsync(Node node, TKey key, TValue valueOffset)
     {
         if (node.IsLeaf)
         {
@@ -291,7 +292,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
                 i = node.Keys.Count;
 
             node.Keys.Insert(i, key);
-            node.PageIds.Insert(i, valueOffset);
+            node.RIDs.Insert(i, valueOffset);
 
             await SaveNodeAsync(node);
 
@@ -330,12 +331,12 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
             IsLeaf = true,
             Keys = node.Keys.GetRange(mid, node.Keys.Count - mid),
             Children = new List<int>(),
-            PageIds = node.PageIds.GetRange(mid, node.PageIds.Count - mid),
+            RIDs = node.RIDs.GetRange(mid, node.RIDs.Count - mid),
             Next = node.Next
         };
 
         node.Keys.RemoveRange(mid, node.Keys.Count - mid);
-        node.PageIds.RemoveRange(mid, node.PageIds.Count - mid);
+        node.RIDs.RemoveRange(mid, node.RIDs.Count - mid);
         node.Next = newNode.Id;
 
         await SaveNodeAsync(newNode);
@@ -354,7 +355,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
             IsLeaf = false,
             Keys = node.Keys.GetRange(mid + 1, node.Keys.Count - mid - 1),
             Children = node.Children.GetRange(mid + 1, node.Children.Count - mid - 1),
-            PageIds = []
+            RIDs = []
         };
 
         var midKey = node.Keys[mid];
@@ -378,7 +379,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
                 await PrintNodeAsync(await LoadNodeAsync(i), level + 1);
         else if (level > 0)
             for (var i = 0; i < node.Keys.Count; i++)
-                Console.WriteLine($"{indent}    Key {node.Keys[i]}: Value Offset: {node.PageIds[i]}");
+                Console.WriteLine($"{indent}    Key {node.Keys[i]}: Value Offset: {node.RIDs[i]}");
     }
 
     private async Task PrintLeafNodesAsync()
@@ -402,7 +403,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
         public bool IsLeaf { get; set; }
         public List<TKey> Keys { get; set; } = [];
         public List<int> Children { get; set; } = [];
-        public List<ulong> PageIds { get; set; } = [];
+        public List<TValue> RIDs { get; set; } = [];
         public int Next { get; set; } // For leaf nodes
     }
 }

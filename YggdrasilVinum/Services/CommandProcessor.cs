@@ -21,7 +21,8 @@ public class CommandProcessor
     ///     Processes a single command
     /// </summary>
     public async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(CommandParser.Command command,
-        IBPlusTreeIndex<int> bPlusTree,
+        // TODO: fix this type
+        IBPlusTreeIndex<int, int> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Debug("Processing command: {CommandType} with key {Key}", command.Type, command.Key);
@@ -32,7 +33,7 @@ public class CommandProcessor
                 var matchingWine = wines.FirstOrDefault(w => w.WineId == command.Key);
                 if (matchingWine.WineId == command.Key)
                 {
-                    var result = await bPlusTree.InsertAsync(matchingWine.WineId, (ulong)matchingWine.WineId);
+                    var result = await bPlusTree.InsertAsync(matchingWine.WineId, matchingWine.WineId);
                     if (result.IsError)
                     {
                         _logger.Error("Failed to insert wine with ID {WineId}: {ErrorMessage}", command.Key,
@@ -66,7 +67,7 @@ public class CommandProcessor
                     foreach (var pageId in results)
                     {
                         // Page ID now represents a reference to where the wine is stored
-                        var wineId = (int)pageId; // For simplicity, assuming pageId correlates to wineId
+                        var wineId = pageId; // For simplicity, assuming pageId correlates to wineId
                         var wine = wines.FirstOrDefault(w => w.WineId == wineId);
                         if (wine != null)
                             _logger.Debug("Found wine: {WineId}, {Label}, {HarvestYear}, {Type}",
@@ -90,7 +91,7 @@ public class CommandProcessor
     ///     Processes commands from a file
     /// </summary>
     public async Task<Result<Unit, BPlusTreeError>> ProcessCommandsFromFileAsync(string filePath,
-        IBPlusTreeIndex<int> bPlusTree,
+        IBPlusTreeIndex<int, int> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Information("Processing commands from file: {FilePath}", filePath);
