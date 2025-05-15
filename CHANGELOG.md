@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/talDoFlemis/YggdrasilVinum/compare/v1.0.0...v1.0.1) (2025-05-15)
+
+
+### Bug Fixes
+
+* **build-push-container:** docker container not being created ([b6642e2](https://github.com/talDoFlemis/YggdrasilVinum/commit/b6642e2db52b95a9d8132ce602099b0a13a22ec0))
+
 # 1.0.0 (2025-05-15)
 
 
