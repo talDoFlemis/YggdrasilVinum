@@ -30,11 +30,11 @@ public class Database(InsertProcessor insertProcessor, EqualitySearchProcessor e
     }
 
     public async Task<Result<WineRecord[], SearchError>> SearchAsync(
-        string query
+        int harvestYear
     )
     {
-        _logger.Debug("Searching for records with query: {@Query}", query);
-        var result = await equalitySearchProcessor.ExecuteAsync();
+        _logger.Debug("Searching for records with harvest year: {@HarvestYear}", harvestYear);
+        var result = await equalitySearchProcessor.ExecuteAsync(harvestYear);
 
         if (result.IsError)
         {

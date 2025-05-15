@@ -2,14 +2,15 @@ using YggdrasilVinum.Models;
 
 namespace YggdrasilVinum.Index;
 
-public interface IBPlusTreeIndex<in TKey>
+public interface IBPlusTreeIndex<in TKey, TValue>
     where TKey : IComparable<TKey>
+    where TValue : IParsable<TValue>
 {
     Task<Result<Unit, BPlusTreeError>> InitializeAsync();
 
-    Task<Result<List<ulong>, BPlusTreeError>> SearchAsync(TKey key);
+    Task<Result<List<TValue>, BPlusTreeError>> SearchAsync(TKey key);
 
-    Task<Result<Unit, BPlusTreeError>> InsertAsync(TKey key, ulong pageId);
+    Task<Result<Unit, BPlusTreeError>> InsertAsync(TKey key, TValue pageId);
 
     Task<Result<int, BPlusTreeError>> HeightAsync();
 

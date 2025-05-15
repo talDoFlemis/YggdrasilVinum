@@ -9,7 +9,7 @@ namespace YggdrasilVinum.Services;
 public class InsertProcessor(
     IBufferManager bufferManager,
     IFileManager fileManager,
-    IBPlusTreeIndex<int> bPlusTree
+    IBPlusTreeIndex<int, RID> bPlusTree
 )
 {
     private readonly ILogger _logger = Log.ForContext<InsertProcessor>();
@@ -62,7 +62,9 @@ public class InsertProcessor(
 
         _logger.Information("Inserted record with success: {@Record}", record);
 
-        var insertInTreeResult = await bPlusTree.InsertAsync(record.HarvestYear, page.PageId);
+        var rid = new RID(page.PageId, (uint)(page.Content.Length - 1));
+
+        var insertInTreeResult = await bPlusTree.InsertAsync(record.HarvestYear, rid);
         if (insertInTreeResult.IsError)
         {
             var error = insertInTreeResult.GetErrorOrThrow();
