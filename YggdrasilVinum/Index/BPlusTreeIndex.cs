@@ -1,8 +1,8 @@
 using System.Text;
 
-namespace YggdrasilVinum.Models;
+namespace YggdrasilVinum.Index;
 
-public class BPlusTreeFile<TKey, TValue>
+public class BPlusTreeIndex<TKey, TValue>
     where TKey : IComparable<TKey>
     where TValue : IParsable<TValue>
 {
@@ -13,7 +13,7 @@ public class BPlusTreeFile<TKey, TValue>
     private int _nextId;
     private int _rootId;
 
-    public BPlusTreeFile(string indexFilePath, string dataFilePath, int degree)
+    public BPlusTreeIndex(string indexFilePath, string dataFilePath, int degree)
     {
         _indexFilePath = indexFilePath;
         _dataFilePath = dataFilePath;

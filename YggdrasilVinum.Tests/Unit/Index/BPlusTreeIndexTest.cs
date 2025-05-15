@@ -1,9 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
-using YggdrasilVinum.Models;
+using YggdrasilVinum.Index;
 
-namespace YggdrasilVinum.Tests.Unit.Models;
+namespace YggdrasilVinum.Tests.Unit.Index;
 
-public class BPlusTreeFileTest : IDisposable
+public class BPlusTreeIndexTest : IDisposable
 {
     private const string _testIndexPath = "test_index.txt";
     private const string _testDataPath = "test_data.csv";
@@ -22,7 +21,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Constructor_CreatesNewFiles_WhenNotExist()
     {
         // Act
-        _ = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        _ = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Assert
         Assert.True(File.Exists(_testIndexPath));
@@ -33,7 +32,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Search_EmptyTree_ReturnsEmptyList()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         var result = tree.Search(1);
@@ -46,7 +45,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_SingleValue_CanBeRetrieved()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         tree.Insert(5, "Test Value");
@@ -61,7 +60,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_MultipleValues_CanBeRetrieved()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         tree.Insert(1, "First");
@@ -78,7 +77,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_DuplicateKeys_StoresAllValues()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         tree.Insert(10, "Value1");
@@ -95,7 +94,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Search_NonExistentKey_ReturnsEmptyList()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
         tree.Insert(1, "One");
 
         // Act
@@ -109,7 +108,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Height_EmptyTree_ReturnsZero()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act & Assert
         Assert.Equal(0, tree.Height());
@@ -119,13 +118,10 @@ public class BPlusTreeFileTest : IDisposable
     public void Height_AfterSplits_IncreasesCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
-        for (int i = 1; i <= 10; i++)
-        {
-            tree.Insert(i, $"Value{i}");
-        }
+        for (var i = 1; i <= 10; i++) tree.Insert(i, $"Value{i}");
 
         // Assert
         Assert.True(tree.Height() > 0);
@@ -135,7 +131,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_ManyValues_MaintainsCorrectOrder()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         tree.Insert(8, "Value8");
@@ -156,13 +152,10 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_EnoughValuesToCauseSplits_CanStillRetrieveAll()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
-        for (int i = 1; i <= 20; i++)
-        {
-            tree.Insert(i, $"Value{i}");
-        }
+        for (var i = 1; i <= 20; i++) tree.Insert(i, $"Value{i}");
 
         // Assert
         Assert.Equal("Value5", tree.Search(5)[0]);
@@ -174,11 +167,11 @@ public class BPlusTreeFileTest : IDisposable
     public void DataPersistence_CanRetrieveAfterRecreatingTree()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
         tree.Insert(1, "Persistent");
 
         // Act
-        var newTree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var newTree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
         var result = newTree.Search(1);
 
         // Assert
@@ -190,27 +183,27 @@ public class BPlusTreeFileTest : IDisposable
     public void Height_GrowsIncreasesPredictably_WithInsertions()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act & Assert
         Assert.Equal(0, tree.Height());
 
         // Act
-        for (int i = 1; i <= 3; i++)
+        for (var i = 1; i <= 3; i++)
             tree.Insert(i, $"Value{i}");
 
         // Assert
         Assert.Equal(1, tree.Height());
 
         // Act
-        for (int i = 4; i <= 6; i++)
+        for (var i = 4; i <= 6; i++)
             tree.Insert(i, $"Value{i}");
 
         // Assert
         Assert.Equal(2, tree.Height());
 
         // Act
-        for (int i = 7; i <= 15; i++)
+        for (var i = 7; i <= 15; i++)
             tree.Insert(i, $"Value{i}");
 
         // Assert
@@ -221,14 +214,14 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_ReverseOrder_MaintainsCorrectStructure()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
-        for (int i = 20; i > 0; i--)
+        for (var i = 20; i > 0; i--)
             tree.Insert(i, $"Value{i}");
 
         // Assert
-        for (int i = 1; i <= 20; i++)
+        for (var i = 1; i <= 20; i++)
             Assert.Equal($"Value{i}", tree.Search(i)[0]);
     }
 
@@ -236,7 +229,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_NonSequentialKeys_MaintainsCorrectOrder()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         var keys = new[] { 50, 25, 75, 12, 37, 62, 87 };
@@ -252,7 +245,7 @@ public class BPlusTreeFileTest : IDisposable
     public void Insert_NegativeKeys_WorksCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
         tree.Insert(-10, "Negative10");
@@ -275,7 +268,7 @@ public class BPlusTreeFileTest : IDisposable
         const string dataPath = "string_data.csv";
         try
         {
-            var tree = new BPlusTreeFile<string, int>(indexPath, dataPath, _defaultDegree);
+            var tree = new BPlusTreeIndex<string, int>(indexPath, dataPath, _defaultDegree);
 
             // Act
             tree.Insert("apple", 1);
@@ -306,7 +299,7 @@ public class BPlusTreeFileTest : IDisposable
         const string dataPath = "double_data.csv";
         try
         {
-            var tree = new BPlusTreeFile<double, string>(indexPath, dataPath, _defaultDegree);
+            var tree = new BPlusTreeIndex<double, string>(indexPath, dataPath, _defaultDegree);
 
             // Act
             tree.Insert(1.5, "OnePointFive");
@@ -334,7 +327,7 @@ public class BPlusTreeFileTest : IDisposable
         const string dataPath = "complex_data.csv";
         try
         {
-            var tree = new BPlusTreeFile<int, TestRecord>(indexPath, dataPath, _defaultDegree);
+            var tree = new BPlusTreeIndex<int, TestRecord>(indexPath, dataPath, _defaultDegree);
 
             // Act
             tree.Insert(1, new TestRecord { Id = 1, Name = "Alice" });
@@ -361,10 +354,10 @@ public class BPlusTreeFileTest : IDisposable
     public void LargeDataset_PerformsCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, string>(_testIndexPath, _testDataPath, _defaultDegree);
 
         // Act
-        for (int i = 1; i <= 100; i++)
+        for (var i = 1; i <= 100; i++)
             tree.Insert(i, $"Value{i}");
 
         // Assert
@@ -378,13 +371,13 @@ public class BPlusTreeFileTest : IDisposable
     public void CustomDegree_AffectsTreeStructure()
     {
         // Arrange
-        var smallDegreeTree = new BPlusTreeFile<int, string>("small_degree.txt", "small_degree_data.csv", 3);
-        var largeDegreeTree = new BPlusTreeFile<int, string>("large_degree.txt", "large_degree_data.csv", 10);
+        var smallDegreeTree = new BPlusTreeIndex<int, string>("small_degree.txt", "small_degree_data.csv", 3);
+        var largeDegreeTree = new BPlusTreeIndex<int, string>("large_degree.txt", "large_degree_data.csv", 10);
 
         try
         {
             // Act
-            for (int i = 1; i <= 30; i++)
+            for (var i = 1; i <= 30; i++)
             {
                 smallDegreeTree.Insert(i, $"Value{i}");
                 largeDegreeTree.Insert(i, $"Value{i}");
@@ -410,16 +403,16 @@ public class BPlusTreeFileTest : IDisposable
     public void MinimumDegree_WorksCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeFile<int, string>("min_degree.txt", "min_degree_data.csv", 2);
+        var tree = new BPlusTreeIndex<int, string>("min_degree.txt", "min_degree_data.csv", 2);
 
         try
         {
             // Act
-            for (int i = 1; i <= 10; i++)
+            for (var i = 1; i <= 10; i++)
                 tree.Insert(i, $"Value{i}");
 
             // Assert
-            for (int i = 1; i <= 10; i++)
+            for (var i = 1; i <= 10; i++)
                 Assert.Equal($"Value{i}", tree.Search(i)[0]);
         }
         finally
@@ -434,11 +427,6 @@ public class BPlusTreeFileTest : IDisposable
     {
         public int Id { get; init; }
         public required string Name { get; init; }
-
-        public override string ToString()
-        {
-            return $"{Id},{Name}";
-        }
 
         public static TestRecord Parse(string s, IFormatProvider? provider)
         {
@@ -458,6 +446,11 @@ public class BPlusTreeFileTest : IDisposable
                 result = null!;
                 return false;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{Id},{Name}";
         }
     }
 }

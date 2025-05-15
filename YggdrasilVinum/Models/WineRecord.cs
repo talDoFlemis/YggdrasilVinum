@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace YggdrasilVinum.Models;
 
-public record struct WineRecord: IParsable<WineRecord>
+public record struct WineRecord : IParsable<WineRecord>
 {
     public WineRecord(int wineId, string label, int harvestYear, WineType type)
     {
@@ -64,7 +64,8 @@ public record struct WineRecord: IParsable<WineRecord>
         {
             return false;
         }
-    }}
+    }
+}
 
 public enum WineType
 {

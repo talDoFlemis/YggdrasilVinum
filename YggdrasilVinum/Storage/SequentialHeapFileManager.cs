@@ -252,8 +252,7 @@ public sealed class SequentialHeapFileManager(
 
             var tempPage = new Page(page.PageId, tempContent.ToArray())
             {
-                IsDirty = page.IsDirty,
-                LastAccessed = page.LastAccessed
+                IsDirty = page.IsDirty, LastAccessed = page.LastAccessed
             };
 
             // Serialize to calculate size

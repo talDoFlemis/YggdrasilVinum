@@ -1,4 +1,5 @@
 using Serilog;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 
@@ -19,7 +20,7 @@ public class CommandProcessor
     /// <summary>
     ///     Processes a single command
     /// </summary>
-    public Task ProcessCommand(CommandParser.Command command, BPlusTreeFile<int, WineRecord> bPlusTree,
+    public Task ProcessCommand(CommandParser.Command command, BPlusTreeIndex<int, WineRecord> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Debug("Processing command: {CommandType} with key {Key}", command.Type, command.Key);
@@ -64,7 +65,7 @@ public class CommandProcessor
     /// <summary>
     ///     Processes commands from a file
     /// </summary>
-    public async Task ProcessCommandsFromFile(string filePath, BPlusTreeFile<int, WineRecord> bPlusTree,
+    public async Task ProcessCommandsFromFile(string filePath, BPlusTreeIndex<int, WineRecord> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Information("Processing commands from file: {FilePath}", filePath);

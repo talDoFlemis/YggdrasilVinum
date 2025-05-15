@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Serilog;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Services;
@@ -23,10 +24,7 @@ internal static class Program
             var wineDataArgument = new Argument<FileInfo?>(
                 "wine-data",
                 "Path to the wine data CSV file that will be parsed"
-            )
-            {
-                Arity = ArgumentArity.ZeroOrOne,
-            };
+            ) { Arity = ArgumentArity.ZeroOrOne };
             wineDataArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/wines.csv"));
             rootCommand.AddArgument(wineDataArgument);
 
@@ -42,10 +40,7 @@ internal static class Program
             var commandsArgument = new Argument<FileInfo?>(
                 "commands-file",
                 "Path to the file containing commands, or omit to use stdin"
-            )
-            {
-                Arity = ArgumentArity.ZeroOrOne,
-            };
+            ) { Arity = ArgumentArity.ZeroOrOne };
             rootCommand.AddArgument(commandsArgument);
 
             // Option for starting a REPL
@@ -195,7 +190,7 @@ internal static class Program
 
     private static void ProcessCommand(
         CommandParser.Command command,
-        BPlusTreeFile<int, WineRecord> bPlusTree,
+        BPlusTreeIndex<int, WineRecord> bPlusTree,
         List<WineRecord> wines,
         IConsole console
     )
