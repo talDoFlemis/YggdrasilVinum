@@ -55,9 +55,10 @@ public static class ApplicationFactory
     /// <summary>
     ///     Creates and initializes a B+ tree with wine data
     /// </summary>
-    public static BPlusTree<int, WineRecord> CreateBPlusTree(List<WineRecord> wines, int pageSize)
+    public static BPlusTreeFile<int, WineRecord> CreateBPlusTree(List<WineRecord> wines, int pageSize)
     {
-        var bPlusTree = new BPlusTree<int, WineRecord>(pageSize);
+        // TODO: Use a proper path for the index and data files
+        var bPlusTree = new BPlusTreeFile<int, WineRecord>("indexFilePath", "dataFilePath", pageSize);
 
         // Insert all wines into the B+ tree
         foreach (var wine in wines)
