@@ -20,7 +20,7 @@ public class CommandProcessor
     /// <summary>
     ///     Processes a single command
     /// </summary>
-    public Task ProcessCommand(CommandParser.Command command, BPlusTreeIndex<int, WineRecord> bPlusTree,
+    public async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(CommandParser.Command command, IBPlusTreeIndex<int> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Debug("Processing command: {CommandType} with key {Key}", command.Type, command.Key);
@@ -31,7 +31,12 @@ public class CommandProcessor
                 var matchingWine = wines.FirstOrDefault(w => w.WineId == command.Key);
                 if (matchingWine.WineId == command.Key)
                 {
-                    bPlusTree.Insert(matchingWine.WineId, matchingWine);
+                    var result = await bPlusTree.InsertAsync(matchingWine.WineId, (ulong)matchingWine.WineId);
+                    if (result.IsError)
+                    {
+                        _logger.Error("Failed to insert wine with ID {WineId}: {ErrorMessage}", command.Key, result.GetErrorOrThrow().Message);
+                        return result;
+                    }
                     _logger.Information("Inserted wine with ID {WineId}: {Label}", command.Key, matchingWine.Label);
                 }
                 else
@@ -42,14 +47,29 @@ public class CommandProcessor
                 break;
 
             case CommandParser.CommandType.Search:
-                var results = bPlusTree.Search(command.Key);
+                var searchResult = await bPlusTree.SearchAsync(command.Key);
+                if (searchResult.IsError)
+                {
+                    _logger.Error("Error searching for key {Key}: {ErrorMessage}", command.Key, searchResult.GetErrorOrThrow().Message);
+                    return Result<Unit, BPlusTreeError>.Error(searchResult.GetErrorOrThrow());
+                }
+
+                var results = searchResult.GetValueOrThrow();
                 if (results.Count > 0)
                 {
                     _logger.Information("Found {Count} matching wines with ID {WineId}", results.Count, command.Key);
 
-                    foreach (var result in results)
-                        _logger.Debug("Found wine: {WineId}, {Label}, {HarvestYear}, {Type}",
-                            result.WineId, result.Label, result.HarvestYear, result.Type);
+                    foreach (var pageId in results)
+                    {
+                        // Page ID now represents a reference to where the wine is stored
+                        var wineId = (int)pageId; // For simplicity, assuming pageId correlates to wineId
+                        var wine = wines.FirstOrDefault(w => w.WineId == wineId);
+                        if (wine != null)
+                            _logger.Debug("Found wine: {WineId}, {Label}, {HarvestYear}, {Type}",
+                                wine.WineId, wine.Label, wine.HarvestYear, wine.Type);
+                        else
+                            _logger.Warning("Found pageId {PageId} but no matching wine", pageId);
+                    }
                 }
                 else
                 {
@@ -59,13 +79,13 @@ public class CommandProcessor
                 break;
         }
 
-        return Task.CompletedTask;
+        return Result<Unit, BPlusTreeError>.Success(new Unit());
     }
 
     /// <summary>
     ///     Processes commands from a file
     /// </summary>
-    public async Task ProcessCommandsFromFile(string filePath, BPlusTreeIndex<int, WineRecord> bPlusTree,
+    public async Task<Result<Unit, BPlusTreeError>> ProcessCommandsFromFileAsync(string filePath, IBPlusTreeIndex<int> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Information("Processing commands from file: {FilePath}", filePath);
@@ -73,7 +93,7 @@ public class CommandProcessor
         if (!File.Exists(filePath))
         {
             _logger.Error("Commands file not found: {FilePath}", filePath);
-            return;
+            return Result<Unit, BPlusTreeError>.Error(new BPlusTreeError($"Commands file not found: {filePath}"));
         }
 
         var commandsResult = CommandParser.ParseCommandFile(filePath);
@@ -81,7 +101,7 @@ public class CommandProcessor
         if (commandsResult.IsError)
         {
             _logger.Error("Failed to parse commands from file: {FilePath}", filePath);
-            return;
+            return Result<Unit, BPlusTreeError>.Error(new BPlusTreeError($"Failed to parse commands from file: {filePath}"));
         }
 
         var (header, commands) = commandsResult.GetValueOrThrow();
@@ -89,6 +109,13 @@ public class CommandProcessor
             commands.Count, header.MaxChildren);
 
         // Process each command
-        foreach (var command in commands) await ProcessCommand(command, bPlusTree, wines);
+        foreach (var command in commands)
+        {
+            var result = await ProcessCommandAsync(command, bPlusTree, wines);
+            if (result.IsError)
+                return result;
+        }
+
+        return Result<Unit, BPlusTreeError>.Success(new Unit());
     }
 }

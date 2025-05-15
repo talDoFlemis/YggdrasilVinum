@@ -54,21 +54,12 @@ public static class ApplicationFactory
     }
 
     /// <summary>
-    ///     Creates and initializes a B+ tree with wine data
+    ///     Creates and initializes a B+ tree
     /// </summary>
-    public static BPlusTreeIndex<int, WineRecord> CreateBPlusTree(List<WineRecord> wines, int pageSize)
+    public static IBPlusTreeIndex<TKey> CreateBPlusTree<TKey>(string indexPath, int pageSize)
+        where TKey : IComparable<TKey>
     {
-        // TODO: Use a proper path for the index and data files
-        var bPlusTree = new BPlusTreeIndex<int, WineRecord>("indexFilePath", "dataFilePath", pageSize);
-
-        // Insert all wines into the B+ tree
-        foreach (var wine in wines)
-        {
-            bPlusTree.Insert(wine.WineId, wine);
-            Log.Debug("Inserted wine: {WineId} - {Label}", wine.WineId, wine.Label);
-        }
-
-        return bPlusTree;
+        return new BPlusTreeIndex<TKey>(indexPath, pageSize);
     }
 
 

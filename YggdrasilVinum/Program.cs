@@ -164,14 +164,19 @@ internal static class Program
             header.MaxChildren
         );
 
-        // Print and process each command
+        // Create B+ tree index for commands
+        var bPlusTree = new BPlusTreeIndex<int>("commands_index.txt", header.MaxChildren);
+
+        // Process each command
         foreach (var command in commands)
+        {
             Log.Information(
                 "Processing command: {CommandType} with key: {CommandKey}",
                 command.Type,
                 command.Key
             );
-        // ProcessCommand(command, bPlusTree, wines, console);
+            await ProcessCommandAsync(command, bPlusTree, wines, console);
+        }
 
         var bufferFlushResult = await bufferManager.FlushAllFramesAsync();
         if (bufferFlushResult.IsError)
@@ -188,9 +193,9 @@ internal static class Program
         }
     }
 
-    private static void ProcessCommand(
+    private static async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(
         CommandParser.Command command,
-        BPlusTreeIndex<int, WineRecord> bPlusTree,
+        IBPlusTreeIndex<int> bPlusTree,
         List<WineRecord> wines,
         IConsole console
     )
@@ -201,7 +206,12 @@ internal static class Program
                 var matchingWine = wines.FirstOrDefault(w => w.WineId == command.Key);
                 if (matchingWine.WineId == command.Key)
                 {
-                    bPlusTree.Insert(matchingWine.WineId, matchingWine);
+                    var insertResult = await bPlusTree.InsertAsync(matchingWine.WineId, (ulong)matchingWine.WineId);
+                    if (insertResult.IsError)
+                    {
+                        console.WriteLine($"Error inserting wine with ID {command.Key}: {insertResult.GetErrorOrThrow().Message}");
+                        return insertResult;
+                    }
                     console.WriteLine($"Inserted wine with ID {command.Key}: {matchingWine.Label}");
                 }
                 else
@@ -212,14 +222,29 @@ internal static class Program
                 break;
 
             case CommandParser.CommandType.Search:
-                var results = bPlusTree.Search(command.Key);
-                if (results.Count > 0)
+                var searchResult = await bPlusTree.SearchAsync(command.Key);
+                if (searchResult.IsError)
                 {
-                    console.WriteLine($"Found {results.Count} matching wines:");
-                    foreach (var result in results)
-                        console.WriteLine(
-                            $"  Wine ID: {result.WineId}, Label: {result.Label}, Harvest Year: {result.HarvestYear}, Type: {result.Type}"
-                        );
+                    console.WriteLine($"Error searching for wine with ID {command.Key}: {searchResult.GetErrorOrThrow().Message}");
+                    return Result<Unit, BPlusTreeError>.Error(searchResult.GetErrorOrThrow());
+                }
+                
+                var pageIds = searchResult.GetValueOrThrow();
+                if (pageIds.Count > 0)
+                {
+                    console.WriteLine($"Found {pageIds.Count} matching wines:");
+                    foreach (var pageId in pageIds)
+                    {
+                        // For simplicity, assuming pageId correlates to wineId
+                        var wineId = (int)pageId;
+                        var wine = wines.FirstOrDefault(w => w.WineId == wineId);
+                        if (wine != null)
+                            console.WriteLine(
+                                $"  Wine ID: {wine.WineId}, Label: {wine.Label}, Harvest Year: {wine.HarvestYear}, Type: {wine.Type}"
+                            );
+                        else
+                            console.WriteLine($"  Found pageId {pageId} but no matching wine");
+                    }
                 }
                 else
                 {
@@ -228,5 +253,7 @@ internal static class Program
 
                 break;
         }
+        
+        return Result<Unit, BPlusTreeError>.Success(new Unit());
     }
 }
