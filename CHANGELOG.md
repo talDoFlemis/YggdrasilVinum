@@ -1,3 +1,11 @@
+# [1.1.0](https://github.com/talDoFlemis/YggdrasilVinum/compare/v1.0.1...v1.1.0) (2025-05-15)
+
+
+### Features
+
+* **index:** integrate B+ tree with InsertProcessor ([4c1723f](https://github.com/talDoFlemis/YggdrasilVinum/commit/4c1723ff15130f42cbdddc44190516e042b52261))
+* **models:** add file-backed B+ tree implementation ([fad8c35](https://github.com/talDoFlemis/YggdrasilVinum/commit/fad8c354a497074ec2db0206eb61087968a0d5fb))
+
 ## [1.0.1](https://github.com/talDoFlemis/YggdrasilVinum/compare/v1.0.0...v1.0.1) (2025-05-15)
 
 
