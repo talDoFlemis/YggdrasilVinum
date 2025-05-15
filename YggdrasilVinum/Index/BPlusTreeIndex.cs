@@ -57,7 +57,7 @@ public class BPlusTreeIndex<TKey> : IBPlusTreeIndex<TKey>
         Debug.Assert(!string.IsNullOrEmpty(_indexFilePath));
 
         _logger.Information(
-            "B+ Tree initialized with degree {degree} and '{indexPath}' file path",
+            "B+ Tree initialized with degree {degree} and {indexPath} file path",
             _degree, _indexFilePath);
         return await Task.FromResult(Result<Unit, BPlusTreeError>.Success(Unit.Value));
     }

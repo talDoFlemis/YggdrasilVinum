@@ -1,13 +1,15 @@
 using Serilog;
 using YggdrasilVinum.Buffer;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum.Services;
 
 public class InsertProcessor(
-    IBufferManager _bufferManager,
-    IFileManager _fileManager
+    IBufferManager bufferManager,
+    IFileManager fileManager,
+    IBPlusTreeIndex<int> bPlusTree
 )
 {
     private readonly ILogger _logger = Log.ForContext<InsertProcessor>();
@@ -18,7 +20,7 @@ public class InsertProcessor(
     {
         _logger.Debug("Inserting record: {@Record}", record);
 
-        var randomPageResult = await _bufferManager.GetRandomPageAsync();
+        var randomPageResult = await bufferManager.GetRandomPageAsync();
 
         if (randomPageResult.IsError)
         {
@@ -48,7 +50,7 @@ public class InsertProcessor(
 
         page.Content = page.Content.Append(record).ToArray();
 
-        var putPageResult = await _bufferManager.PutPageAsync(page);
+        var putPageResult = await bufferManager.PutPageAsync(page);
         if (putPageResult.IsError)
         {
             var error = putPageResult.GetErrorOrThrow();
@@ -57,15 +59,25 @@ public class InsertProcessor(
             return await Task.FromResult(Result<Unit, InsertError>.Error(
                 new InsertError("Failed to put page")));
         }
-
         _logger.Information("Inserted record with success: {@Record}", record);
+
+        var insertInTreeResult = await bPlusTree.InsertAsync(record.HarvestYear, page.PageId);
+        if (insertInTreeResult.IsError)
+        {
+            var error = insertInTreeResult.GetErrorOrThrow();
+            _logger.Error("Failed to insert record into B+ tree: {@Error}", error);
+            return await Task.FromResult(Result<Unit, InsertError>.Error(
+                new InsertError("Failed to insert record into B+ tree")));
+        }
+
+        _logger.Information("Inserted page into B+ tree with success: {@page}", page);
         return await Task.FromResult(Result<Unit, InsertError>.Success(Unit.Value));
     }
 
     private async Task<Result<bool, InsertError>> PageHasEnoughSpaceToInsertRecord(Page page, WineRecord record)
     {
         _logger.Debug("Checking if page has enough space: {@Page}", page);
-        var hasSpaceResult = await _fileManager.PageHasEnoughSpaceToInsertRecord(page, record);
+        var hasSpaceResult = await fileManager.PageHasEnoughSpaceToInsertRecord(page, record);
         if (hasSpaceResult.IsError)
         {
             var error = hasSpaceResult.GetErrorOrThrow();
@@ -84,7 +96,7 @@ public class InsertProcessor(
     {
         _logger.Debug("Allocating new page");
 
-        var newPageResult = await _fileManager.AllocateNewPageAsync();
+        var newPageResult = await fileManager.AllocateNewPageAsync();
         if (newPageResult.IsError)
         {
             var error = newPageResult.GetErrorOrThrow();

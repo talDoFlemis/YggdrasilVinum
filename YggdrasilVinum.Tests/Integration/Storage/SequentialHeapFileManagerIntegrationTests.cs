@@ -32,7 +32,11 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Warning: Failed to clean up temp directory: {ex.Message}");
+                Log.Error($"Warning: Failed to clean up temp directory: {ex.Message}");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
             }
     }
 
@@ -105,7 +109,7 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         var wineRecords = new[]
         {
             new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Rose),
-            new WineRecord(2, "Merlot", 2019, WineType.Red)
+            new WineRecord(2, "Merlot", 2019, WineType.Red),
         };
         page.Content = wineRecords;
 
@@ -159,7 +163,6 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         var fileManager = new SequentialHeapFileManager(tempDir, 1024 * 10, 1024);
         await fileManager.InitializeAsync();
 
-
         // Act
         var result = await fileManager.ReadPageAsync(9999);
 
@@ -183,7 +186,6 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         // Assert
         Assert.True(result.IsError);
     }
-
 
     [Fact]
     public async Task FlushAsync_EnsuresDataIsPersisted()
@@ -228,7 +230,8 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
 
         // Create a large collection of wine records
         var wineRecords = new List<WineRecord>();
-        for (var i = 0; i < 20; i++) wineRecords.Add(new WineRecord(i, $"Wine {i}", 2000 + i, WineType.Red));
+        for (var i = 0; i < 20; i++)
+            wineRecords.Add(new WineRecord(i, $"Wine {i}", 2000 + i, WineType.Red));
 
         page.Content = wineRecords.ToArray();
 
@@ -286,7 +289,7 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         page.Content = new[]
         {
             new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Red),
-            new WineRecord(2, "Merlot", 2019, WineType.Red)
+            new WineRecord(2, "Merlot", 2019, WineType.Red),
         };
 
         // Create a new record to insert
@@ -315,12 +318,14 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         // Fill the page with many records to consume space
         var wineRecords = new List<WineRecord>();
         for (var i = 0; i < 20; i++)
-            wineRecords.Add(new WineRecord(
-                i,
-                $"Wine with a very long name to consume space {i}",
-                2000 + i,
-                WineType.Red
-            ));
+            wineRecords.Add(
+                new WineRecord(
+                    i,
+                    $"Wine with a very long name to consume space {i}",
+                    2000 + i,
+                    WineType.Red
+                )
+            );
         page.Content = wineRecords.ToArray();
 
         // Create a new record to insert (also with a long name)
@@ -336,7 +341,10 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.False(result.GetValueOrThrow(), "Page should not have enough space for a new record");
+        Assert.False(
+            result.GetValueOrThrow(),
+            "Page should not have enough space for a new record"
+        );
     }
 
     [Fact]
@@ -362,6 +370,9 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.True(result.GetValueOrThrow(), "Empty page should have enough space for a new record");
+        Assert.True(
+            result.GetValueOrThrow(),
+            "Empty page should have enough space for a new record"
+        );
     }
 }
