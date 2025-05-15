@@ -12,6 +12,12 @@
     &lt;TestId&gt;xUnit::EE76C4A5-D5A3-4DD1-9B94-35565CB5C5A3::net9.0::YggdrasilVinum.Tests.Integration.Services.InsertProcessorIntegrationTests.ExecuteAsync_PersistsDataAfterBufferFlush&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=56a241b8_002D2c9a_002D407b_002D8853_002D12c2c914255c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="HarvestYearSearchProcessorTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::EE76C4A5-D5A3-4DD1-9B94-35565CB5C5A3::net9.0::YggdrasilVinum.Tests.Unit.Services.HarvestYearSearchProcessorTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c9986001_002D647b_002D4f18_002D9eff_002Ddcda49b2911a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="SequentialHeapFileManagerIntegrationTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Project Location="/home/flemis/codes/YggdrasilVinum/YggdrasilVinum.Tests" Presentation="&amp;lt;YggdrasilVinum.Tests&amp;gt;" /&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
