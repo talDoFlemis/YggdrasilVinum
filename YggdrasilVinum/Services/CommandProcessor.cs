@@ -20,7 +20,8 @@ public class CommandProcessor
     /// <summary>
     ///     Processes a single command
     /// </summary>
-    public async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(CommandParser.Command command, IBPlusTreeIndex<int> bPlusTree,
+    public async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(CommandParser.Command command,
+        IBPlusTreeIndex<int> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Debug("Processing command: {CommandType} with key {Key}", command.Type, command.Key);
@@ -34,9 +35,11 @@ public class CommandProcessor
                     var result = await bPlusTree.InsertAsync(matchingWine.WineId, (ulong)matchingWine.WineId);
                     if (result.IsError)
                     {
-                        _logger.Error("Failed to insert wine with ID {WineId}: {ErrorMessage}", command.Key, result.GetErrorOrThrow().Message);
+                        _logger.Error("Failed to insert wine with ID {WineId}: {ErrorMessage}", command.Key,
+                            result.GetErrorOrThrow().Message);
                         return result;
                     }
+
                     _logger.Information("Inserted wine with ID {WineId}: {Label}", command.Key, matchingWine.Label);
                 }
                 else
@@ -50,7 +53,8 @@ public class CommandProcessor
                 var searchResult = await bPlusTree.SearchAsync(command.Key);
                 if (searchResult.IsError)
                 {
-                    _logger.Error("Error searching for key {Key}: {ErrorMessage}", command.Key, searchResult.GetErrorOrThrow().Message);
+                    _logger.Error("Error searching for key {Key}: {ErrorMessage}", command.Key,
+                        searchResult.GetErrorOrThrow().Message);
                     return Result<Unit, BPlusTreeError>.Error(searchResult.GetErrorOrThrow());
                 }
 
@@ -85,7 +89,8 @@ public class CommandProcessor
     /// <summary>
     ///     Processes commands from a file
     /// </summary>
-    public async Task<Result<Unit, BPlusTreeError>> ProcessCommandsFromFileAsync(string filePath, IBPlusTreeIndex<int> bPlusTree,
+    public async Task<Result<Unit, BPlusTreeError>> ProcessCommandsFromFileAsync(string filePath,
+        IBPlusTreeIndex<int> bPlusTree,
         List<WineRecord> wines)
     {
         _logger.Information("Processing commands from file: {FilePath}", filePath);
@@ -101,7 +106,8 @@ public class CommandProcessor
         if (commandsResult.IsError)
         {
             _logger.Error("Failed to parse commands from file: {FilePath}", filePath);
-            return Result<Unit, BPlusTreeError>.Error(new BPlusTreeError($"Failed to parse commands from file: {filePath}"));
+            return Result<Unit, BPlusTreeError>.Error(
+                new BPlusTreeError($"Failed to parse commands from file: {filePath}"));
         }
 
         var (header, commands) = commandsResult.GetValueOrThrow();

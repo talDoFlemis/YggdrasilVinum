@@ -50,7 +50,7 @@ public class BPlusTreeIndexTest : IDisposable
         var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
 
         // Act
-        ulong pageId = 12345UL;
+        var pageId = 12345UL;
         await tree.InsertAsync(5, pageId);
         var result = await UnwrapResult(tree.SearchAsync(5));
 
@@ -328,8 +328,8 @@ public class BPlusTreeIndexTest : IDisposable
             var tree = new BPlusTreeIndex<int>(indexPath, _defaultDegree);
 
             // Act
-            ulong maxPageId = ulong.MaxValue;
-            ulong minPageId = ulong.MinValue;
+            var maxPageId = ulong.MaxValue;
+            var minPageId = ulong.MinValue;
             await tree.InsertAsync(1, maxPageId);
             await tree.InsertAsync(2, minPageId);
 
@@ -351,8 +351,8 @@ public class BPlusTreeIndexTest : IDisposable
         var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
 
         // Act
-        ulong largePageId1 = 18446744073709551000; // Close to ulong.MaxValue
-        ulong largePageId2 = 9223372036854775000;  // Large value
+        var largePageId1 = 18446744073709551000; // Close to ulong.MaxValue
+        ulong largePageId2 = 9223372036854775000; // Large value
 
         await tree.InsertAsync(42, largePageId1);
         await tree.InsertAsync(43, largePageId2);
@@ -396,7 +396,8 @@ public class BPlusTreeIndexTest : IDisposable
             }
 
             // Assert
-            Assert.True(await UnwrapResult(smallDegreeTree.HeightAsync()) > await UnwrapResult(largeDegreeTree.HeightAsync()));
+            Assert.True(await UnwrapResult(smallDegreeTree.HeightAsync()) >
+                        await UnwrapResult(largeDegreeTree.HeightAsync()));
 
             Assert.Equal(1500UL, (await UnwrapResult(smallDegreeTree.SearchAsync(15)))[0]);
             Assert.Equal(1500UL, (await UnwrapResult(largeDegreeTree.SearchAsync(15)))[0]);

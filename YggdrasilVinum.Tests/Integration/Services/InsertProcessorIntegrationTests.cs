@@ -110,7 +110,7 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
             new(2, "Chardonnay", 2019, WineType.White),
             new(3, "Merlot", 2017, WineType.Red),
             new(4, "Pinot Noir", 2020, WineType.Red),
-            new(5, "Sauvignon Blanc", 2021, WineType.White),
+            new(5, "Sauvignon Blanc", 2021, WineType.White)
         };
 
         // Act
@@ -271,28 +271,26 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         // Insert records with different harvest years
         var recordsByYear = new Dictionary<int, List<WineRecord>>
         {
-            [2018] = new List<WineRecord>
+            [2018] = new()
             {
-                new(1, "Cabernet Sauvignon", 2018, WineType.Red),
-                new(2, "Merlot Reserve", 2018, WineType.Red),
+                new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Red),
+                new WineRecord(2, "Merlot Reserve", 2018, WineType.Red)
             },
-            [2019] = new List<WineRecord> { new(3, "Chardonnay", 2019, WineType.White) },
-            [2020] = new List<WineRecord>
+            [2019] = new() { new WineRecord(3, "Chardonnay", 2019, WineType.White) },
+            [2020] = new()
             {
-                new(4, "Pinot Noir", 2020, WineType.Red),
-                new(5, "Syrah", 2020, WineType.Red),
-                new(6, "Malbec", 2020, WineType.Red),
-            },
+                new WineRecord(4, "Pinot Noir", 2020, WineType.Red),
+                new WineRecord(5, "Syrah", 2020, WineType.Red),
+                new WineRecord(6, "Malbec", 2020, WineType.Red)
+            }
         };
 
         // Insert all records
         foreach (var year in recordsByYear.Keys)
+        foreach (var record in recordsByYear[year])
         {
-            foreach (var record in recordsByYear[year])
-            {
-                var result = await insertProcessor.ExecuteAsync(record);
-                result.IsSuccess.Should().BeTrue();
-            }
+            var result = await insertProcessor.ExecuteAsync(record);
+            result.IsSuccess.Should().BeTrue();
         }
 
         await bufferManager.FlushAllFramesAsync();
@@ -320,7 +318,6 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
                 // All records from this year in this page should match our original data
                 var matchingRecords = page.Content.Where(r => r.HarvestYear == year).ToList();
                 foreach (var record in matchingRecords)
-                {
                     recordsByYear[year]
                         .Should()
                         .Contain(r =>
@@ -328,7 +325,6 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
                             && r.Label == record.Label
                             && r.HarvestYear == year
                         );
-                }
             }
         }
     }

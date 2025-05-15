@@ -12,9 +12,9 @@ namespace YggdrasilVinum.Tests.Unit.Services;
 public class InsertProcessorTests
 {
     private readonly InsertProcessor _insertProcessor;
+    private readonly Mock<IBPlusTreeIndex<int>> _mockBPlusTree;
     private readonly Mock<IBufferManager> _mockBufferManager;
     private readonly Mock<IFileManager> _mockFileManager;
-    private readonly Mock<IBPlusTreeIndex<int>> _mockBPlusTree;
     private readonly WineRecord _testRecord;
 
     public InsertProcessorTests()
@@ -23,7 +23,8 @@ public class InsertProcessorTests
         _mockBufferManager = new Mock<IBufferManager>();
         _mockFileManager = new Mock<IFileManager>();
         _mockBPlusTree = new Mock<IBPlusTreeIndex<int>>();
-        _insertProcessor = new InsertProcessor(_mockBufferManager.Object, _mockFileManager.Object, _mockBPlusTree.Object);
+        _insertProcessor =
+            new InsertProcessor(_mockBufferManager.Object, _mockFileManager.Object, _mockBPlusTree.Object);
         _testRecord = new WineRecord(1, "Test Wine", 2020, WineType.Red);
 
         // Configure logger to avoid errors during tests

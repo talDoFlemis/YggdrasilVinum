@@ -59,6 +59,7 @@ public class InsertProcessor(
             return await Task.FromResult(Result<Unit, InsertError>.Error(
                 new InsertError("Failed to put page")));
         }
+
         _logger.Information("Inserted record with success: {@Record}", record);
 
         var insertInTreeResult = await bPlusTree.InsertAsync(record.HarvestYear, page.PageId);

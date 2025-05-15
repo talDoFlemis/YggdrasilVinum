@@ -109,7 +109,7 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         var wineRecords = new[]
         {
             new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Rose),
-            new WineRecord(2, "Merlot", 2019, WineType.Red),
+            new WineRecord(2, "Merlot", 2019, WineType.Red)
         };
         page.Content = wineRecords;
 
@@ -289,7 +289,7 @@ public sealed class SequentialHeapFileManagerIntegrationTests : IDisposable
         page.Content = new[]
         {
             new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Red),
-            new WineRecord(2, "Merlot", 2019, WineType.Red),
+            new WineRecord(2, "Merlot", 2019, WineType.Red)
         };
 
         // Create a new record to insert
