@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using Serilog;
 using YggdrasilVinum.Buffer;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Services;
 using YggdrasilVinum.Storage;
@@ -11,6 +12,7 @@ namespace YggdrasilVinum.Tests.Unit.Services;
 public class InsertProcessorTests
 {
     private readonly InsertProcessor _insertProcessor;
+    private readonly Mock<IBPlusTreeIndex<int>> _mockBPlusTree;
     private readonly Mock<IBufferManager> _mockBufferManager;
     private readonly Mock<IFileManager> _mockFileManager;
     private readonly WineRecord _testRecord;
@@ -20,7 +22,9 @@ public class InsertProcessorTests
         // Setup
         _mockBufferManager = new Mock<IBufferManager>();
         _mockFileManager = new Mock<IFileManager>();
-        _insertProcessor = new InsertProcessor(_mockBufferManager.Object, _mockFileManager.Object);
+        _mockBPlusTree = new Mock<IBPlusTreeIndex<int>>();
+        _insertProcessor =
+            new InsertProcessor(_mockBufferManager.Object, _mockFileManager.Object, _mockBPlusTree.Object);
         _testRecord = new WineRecord(1, "Test Wine", 2020, WineType.Red);
 
         // Configure logger to avoid errors during tests
@@ -46,6 +50,9 @@ public class InsertProcessorTests
         _mockBufferManager.Setup(m => m.PutPageAsync(It.Is<Page>(p =>
                 p.PageId == pageId && p.Content.Contains(_testRecord))))
             .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BufferError>.Success(YggdrasilVinum.Models.Unit.Value));
+
+        _mockBPlusTree.Setup(m => m.InsertAsync(_testRecord.HarvestYear, pageId))
+            .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BPlusTreeError>.Success(YggdrasilVinum.Models.Unit.Value));
 
         // Act
         var result = await _insertProcessor.ExecuteAsync(_testRecord);
@@ -78,6 +85,9 @@ public class InsertProcessorTests
         _mockBufferManager.Setup(m => m.PutPageAsync(It.Is<Page>(p =>
                 p.PageId == newPageId && p.Content.Contains(_testRecord))))
             .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BufferError>.Success(YggdrasilVinum.Models.Unit.Value));
+
+        _mockBPlusTree.Setup(m => m.InsertAsync(_testRecord.HarvestYear, newPageId))
+            .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BPlusTreeError>.Success(YggdrasilVinum.Models.Unit.Value));
 
         // Act
         var result = await _insertProcessor.ExecuteAsync(_testRecord);
@@ -174,5 +184,33 @@ public class InsertProcessorTests
         // Assert
         result.IsError.Should().BeTrue();
         result.GetErrorOrThrow().Message.Should().Contain("Failed to put page");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenBPlusTreeInsertFails_ReturnsError()
+    {
+        // Arrange
+        var pageId = (ulong)1;
+        var page = new Page(pageId, Array.Empty<WineRecord>());
+        var errorMessage = "Failed to insert into B+ tree";
+
+        _mockBufferManager.Setup(m => m.GetRandomPageAsync())
+            .ReturnsAsync(Result<Page, BufferError>.Success(page));
+
+        _mockFileManager.Setup(m => m.PageHasEnoughSpaceToInsertRecord(page, _testRecord))
+            .ReturnsAsync(Result<bool, StoreError>.Success(true));
+
+        _mockBufferManager.Setup(m => m.PutPageAsync(It.IsAny<Page>()))
+            .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BufferError>.Success(YggdrasilVinum.Models.Unit.Value));
+
+        _mockBPlusTree.Setup(m => m.InsertAsync(_testRecord.HarvestYear, pageId))
+            .ReturnsAsync(Result<YggdrasilVinum.Models.Unit, BPlusTreeError>.Error(new BPlusTreeError(errorMessage)));
+
+        // Act
+        var result = await _insertProcessor.ExecuteAsync(_testRecord);
+
+        // Assert
+        result.IsError.Should().BeTrue();
+        result.GetErrorOrThrow().Message.Should().Contain("Failed to insert record into B+ tree");
     }
 }

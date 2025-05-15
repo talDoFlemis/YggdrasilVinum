@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using YggdrasilVinum.Buffer;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Storage;
@@ -53,20 +54,12 @@ public static class ApplicationFactory
     }
 
     /// <summary>
-    ///     Creates and initializes a B+ tree with wine data
+    ///     Creates and initializes a B+ tree
     /// </summary>
-    public static BPlusTree<int, WineRecord> CreateBPlusTree(List<WineRecord> wines, int pageSize)
+    public static IBPlusTreeIndex<TKey> CreateBPlusTree<TKey>(string indexPath, int pageSize)
+        where TKey : IComparable<TKey>
     {
-        var bPlusTree = new BPlusTree<int, WineRecord>(pageSize);
-
-        // Insert all wines into the B+ tree
-        foreach (var wine in wines)
-        {
-            bPlusTree.Insert(wine.WineId, wine);
-            Log.Debug("Inserted wine: {WineId} - {Label}", wine.WineId, wine.Label);
-        }
-
-        return bPlusTree;
+        return new BPlusTreeIndex<TKey>(indexPath, pageSize);
     }
 
 

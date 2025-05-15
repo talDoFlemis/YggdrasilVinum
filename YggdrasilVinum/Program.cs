@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Serilog;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Services;
@@ -22,27 +23,31 @@ internal static class Program
             // Argument for wine data file
             var wineDataArgument = new Argument<FileInfo?>(
                 "wine-data",
-                "Path to the wine data CSV file that will be parsed") { Arity = ArgumentArity.ZeroOrOne };
+                "Path to the wine data CSV file that will be parsed"
+            ) { Arity = ArgumentArity.ZeroOrOne };
             wineDataArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/wines.csv"));
             rootCommand.AddArgument(wineDataArgument);
 
             // Argument for page size
             var pageSizeArgument = new Argument<int>(
                 "page-size",
-                "B+ Tree page size (max children per node)");
+                "B+ Tree page size (max children per node)"
+            );
             pageSizeArgument.SetDefaultValue(4);
             rootCommand.AddArgument(pageSizeArgument);
 
             // Argument for commands input file
             var commandsArgument = new Argument<FileInfo?>(
                 "commands-file",
-                "Path to the file containing commands, or omit to use stdin") { Arity = ArgumentArity.ZeroOrOne };
+                "Path to the file containing commands, or omit to use stdin"
+            ) { Arity = ArgumentArity.ZeroOrOne };
             rootCommand.AddArgument(commandsArgument);
 
             // Option for starting a REPL
             var replOption = new Option<bool>(
                 "--repl",
-                "Start an interactive REPL for text matching");
+                "Start an interactive REPL for text matching"
+            );
             rootCommand.AddOption(replOption);
 
             rootCommand.SetHandler(async context =>
@@ -67,8 +72,13 @@ internal static class Program
         }
     }
 
-    private static async Task RunApplication(FileInfo? wineDataFile, int pageSize, FileInfo? commandsFile,
-        bool startRepl, IConsole console)
+    private static async Task RunApplication(
+        FileInfo? wineDataFile,
+        int pageSize,
+        FileInfo? commandsFile,
+        bool startRepl,
+        IConsole console
+    )
     {
         // Parse wine data
         var wineDataPath = wineDataFile?.FullName ?? "YggdrasilVinum/Data/wines.csv";
@@ -79,7 +89,11 @@ internal static class Program
         if (wineResult.IsError)
         {
             var error = wineResult.GetErrorOrThrow();
-            Log.Error("Error parsing wine data: {ErrorMessage} at line {LineNumber}", error.Message, error.LineNumber);
+            Log.Error(
+                "Error parsing wine data: {ErrorMessage} at line {LineNumber}",
+                error.Message,
+                error.LineNumber
+            );
             return;
         }
 
@@ -88,23 +102,35 @@ internal static class Program
 
         var heapSizeInBytes = (ulong)40 * 1024 * 1024; // 40 MB
         var pageSizeInBytes = (ulong)pageSize * 1024; // 1 KB
-        var fileManager = ApplicationFactory.CreateFileManager("./storage", heapSizeInBytes, pageSizeInBytes);
+        var fileManager = ApplicationFactory.CreateFileManager(
+            "./storage",
+            heapSizeInBytes,
+            pageSizeInBytes
+        );
 
         (await fileManager.InitializeAsync()).GetValueOrThrow();
 
         var amountOfPageFrames = 1UL;
         var amountOfIndexFrames = 1UL;
-        var bufferManager =
-            ApplicationFactory.CreateBufferManager(fileManager, amountOfPageFrames, amountOfIndexFrames);
+        var bufferManager = ApplicationFactory.CreateBufferManager(
+            fileManager,
+            amountOfPageFrames,
+            amountOfIndexFrames
+        );
 
         (await bufferManager.InitializeAsync()).GetValueOrThrow();
 
-        var insertProcessor = new InsertProcessor(bufferManager, fileManager);
+        var bPlusTree = ApplicationFactory.CreateBPlusTree<int>(
+            "./storage/index.txt",
+            pageSize
+        );
+
+        (await bPlusTree.InitializeAsync()).GetValueOrThrow();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
         var equalityProcessor = new EqualitySearchProcessor();
 
-
         var database = new Database(insertProcessor, equalityProcessor);
-
 
         foreach (var wine in wines)
         {
@@ -116,8 +142,10 @@ internal static class Program
             }
         }
 
-        Log.Information("Inserted {Count} wine records into the database", database.GetRecordsInsertedCount());
-
+        Log.Information(
+            "Inserted {Count} wine records into the database",
+            database.GetRecordsInsertedCount()
+        );
 
         if (commandsFile == null)
             return;
@@ -128,18 +156,31 @@ internal static class Program
         if (commandsResult.IsError)
         {
             var error = commandsResult.GetErrorOrThrow();
-            Log.Error("Error parsing commands: {ErrorMessage} at line {LineNumber}", error.Message, error.LineNumber);
+            Log.Error(
+                "Error parsing commands: {ErrorMessage} at line {LineNumber}",
+                error.Message,
+                error.LineNumber
+            );
             return;
         }
 
         var (header, commands) = commandsResult.GetValueOrThrow();
-        Log.Information("Successfully parsed {CommandCount} commands with max children: {MaxChildren}", commands.Count,
-            header.MaxChildren);
+        Log.Information(
+            "Successfully parsed {CommandCount} commands with max children: {MaxChildren}",
+            commands.Count,
+            header.MaxChildren
+        );
 
-        // Print and process each command
+        // Process each command
         foreach (var command in commands)
-            Log.Information("Processing command: {CommandType} with key: {CommandKey}", command.Type, command.Key);
-        // ProcessCommand(command, bPlusTree, wines, console);
+        {
+            Log.Information(
+                "Processing command: {CommandType} with key: {CommandKey}",
+                command.Type,
+                command.Key
+            );
+            await ProcessCommandAsync(command, bPlusTree, wines, console);
+        }
 
         var bufferFlushResult = await bufferManager.FlushAllFramesAsync();
         if (bufferFlushResult.IsError)
@@ -156,8 +197,12 @@ internal static class Program
         }
     }
 
-    private static void ProcessCommand(CommandParser.Command command, BPlusTree<int, WineRecord> bPlusTree,
-        List<WineRecord> wines, IConsole console)
+    private static async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(
+        CommandParser.Command command,
+        IBPlusTreeIndex<int> bPlusTree,
+        List<WineRecord> wines,
+        IConsole console
+    )
     {
         switch (command.Type)
         {
@@ -165,7 +210,14 @@ internal static class Program
                 var matchingWine = wines.FirstOrDefault(w => w.WineId == command.Key);
                 if (matchingWine.WineId == command.Key)
                 {
-                    bPlusTree.Insert(matchingWine.WineId, matchingWine);
+                    var insertResult = await bPlusTree.InsertAsync(matchingWine.WineId, (ulong)matchingWine.WineId);
+                    if (insertResult.IsError)
+                    {
+                        console.WriteLine(
+                            $"Error inserting wine with ID {command.Key}: {insertResult.GetErrorOrThrow().Message}");
+                        return insertResult;
+                    }
+
                     console.WriteLine($"Inserted wine with ID {command.Key}: {matchingWine.Label}");
                 }
                 else
@@ -176,13 +228,30 @@ internal static class Program
                 break;
 
             case CommandParser.CommandType.Search:
-                var results = bPlusTree.Search(command.Key);
-                if (results.Count > 0)
+                var searchResult = await bPlusTree.SearchAsync(command.Key);
+                if (searchResult.IsError)
                 {
-                    console.WriteLine($"Found {results.Count} matching wines:");
-                    foreach (var result in results)
-                        console.WriteLine(
-                            $"  Wine ID: {result.WineId}, Label: {result.Label}, Harvest Year: {result.HarvestYear}, Type: {result.Type}");
+                    console.WriteLine(
+                        $"Error searching for wine with ID {command.Key}: {searchResult.GetErrorOrThrow().Message}");
+                    return Result<Unit, BPlusTreeError>.Error(searchResult.GetErrorOrThrow());
+                }
+
+                var pageIds = searchResult.GetValueOrThrow();
+                if (pageIds.Count > 0)
+                {
+                    console.WriteLine($"Found {pageIds.Count} matching wines:");
+                    foreach (var pageId in pageIds)
+                    {
+                        // For simplicity, assuming pageId correlates to wineId
+                        var wineId = (int)pageId;
+                        var wine = wines.FirstOrDefault(w => w.WineId == wineId);
+                        if (wine != null)
+                            console.WriteLine(
+                                $"  Wine ID: {wine.WineId}, Label: {wine.Label}, Harvest Year: {wine.HarvestYear}, Type: {wine.Type}"
+                            );
+                        else
+                            console.WriteLine($"  Found pageId {pageId} but no matching wine");
+                    }
                 }
                 else
                 {
@@ -191,5 +260,7 @@ internal static class Program
 
                 break;
         }
+
+        return Result<Unit, BPlusTreeError>.Success(new Unit());
     }
 }

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Serilog;
 using YggdrasilVinum.Buffer;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Services;
 using YggdrasilVinum.Storage;
@@ -34,7 +35,11 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Warning: Failed to clean up temp directory: {ex.Message}");
+                Log.Error($"Warning: Failed to clean up temp directory: {ex.Message}");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
             }
     }
 
@@ -56,7 +61,10 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         var bufferManager = new LruBufferManager(fileManager, 3);
         await bufferManager.InitializeAsync();
 
-        var insertProcessor = new InsertProcessor(bufferManager, fileManager);
+        var bPlusTree = new BPlusTreeIndex<int>(Path.Combine(tempDir, "index.txt"), 4);
+        await bPlusTree.InitializeAsync();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
         var wineRecord = new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Red);
 
         // Act
@@ -73,6 +81,11 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
 
         var page = pageResult.GetValueOrThrow();
         page.Content.Should().ContainSingle(r => r.WineId == 1 && r.Label == "Cabernet Sauvignon");
+
+        // Verify the record was indexed in the B+ tree
+        var searchResult = await bPlusTree.SearchAsync(wineRecord.HarvestYear);
+        searchResult.IsSuccess.Should().BeTrue();
+        searchResult.GetValueOrThrow().Should().Contain(1);
     }
 
     [Fact]
@@ -86,7 +99,10 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         var bufferManager = new LruBufferManager(fileManager, 3);
         await bufferManager.InitializeAsync();
 
-        var insertProcessor = new InsertProcessor(bufferManager, fileManager);
+        var bPlusTree = new BPlusTreeIndex<int>(Path.Combine(tempDir, "index.txt"), 4);
+        await bPlusTree.InitializeAsync();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
 
         var records = new List<WineRecord>
         {
@@ -116,6 +132,19 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         page.Content.Should().Contain(r => r.WineId == 1 && r.Label == "Cabernet Sauvignon");
         page.Content.Should().Contain(r => r.WineId == 3 && r.Label == "Merlot");
         page.Content.Should().Contain(r => r.WineId == 5 && r.Label == "Sauvignon Blanc");
+
+        // Verify records were indexed in the B+ tree by harvest year
+        var searchResult2018 = await bPlusTree.SearchAsync(2018);
+        searchResult2018.IsSuccess.Should().BeTrue();
+        searchResult2018.GetValueOrThrow().Should().Contain(1);
+
+        var searchResult2017 = await bPlusTree.SearchAsync(2017);
+        searchResult2017.IsSuccess.Should().BeTrue();
+        searchResult2017.GetValueOrThrow().Should().Contain(1);
+
+        var searchResult2021 = await bPlusTree.SearchAsync(2021);
+        searchResult2021.IsSuccess.Should().BeTrue();
+        searchResult2021.GetValueOrThrow().Should().Contain(1);
     }
 
     [Fact]
@@ -130,7 +159,10 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         var bufferManager = new LruBufferManager(fileManager, 3);
         await bufferManager.InitializeAsync();
 
-        var insertProcessor = new InsertProcessor(bufferManager, fileManager);
+        var bPlusTree = new BPlusTreeIndex<int>(Path.Combine(tempDir, "index.txt"), 4);
+        await bPlusTree.InitializeAsync();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
 
         // Insert many records with long names to fill the page
         for (var i = 1; i <= 9; i++)
@@ -169,7 +201,9 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         page2Result.IsSuccess.Should().BeTrue();
 
         var page2 = page2Result.GetValueOrThrow();
-        page2.Content.Should().ContainSingle(r => r.WineId == newRecord.WineId && r.Label == newRecord.Label);
+        page2
+            .Content.Should()
+            .ContainSingle(r => r.WineId == newRecord.WineId && r.Label == newRecord.Label);
     }
 
     [Fact]
@@ -183,7 +217,10 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         var bufferManager = new LruBufferManager(fileManager, 3);
         await bufferManager.InitializeAsync();
 
-        var insertProcessor = new InsertProcessor(bufferManager, fileManager);
+        var bPlusTree = new BPlusTreeIndex<int>(Path.Combine(tempDir, "index.txt"), 4);
+        await bPlusTree.InitializeAsync();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
 
         // Insert some records
         for (var i = 1; i <= 5; i++)
@@ -197,13 +234,98 @@ public sealed class InsertProcessorIntegrationTests : IDisposable
         await bufferManager.FlushAllFramesAsync();
         await fileManager.DisposeAsync();
 
-        // Create a new file manager and buffer manager to verify data was persisted
+        // Create a new file manager, buffer manager, and B+ tree to verify data was persisted
         var newFileManager = new SequentialHeapFileManager(tempDir, 1024 * 10);
         await newFileManager.InitializeAsync();
+
+        var newBPlusTree = new BPlusTreeIndex<int>(Path.Combine(tempDir, "index.txt"), 4);
+        await newBPlusTree.InitializeAsync();
 
         // Assert
         var pageResult = await newFileManager.ReadPageAsync(1);
         pageResult.IsSuccess.Should().BeTrue();
         pageResult.GetValueOrThrow().Content.Length.Should().Be(5);
+
+        // Verify B+ tree heights
+        var heightResult = await newBPlusTree.HeightAsync();
+        heightResult.IsSuccess.Should().BeTrue();
+        heightResult.GetValueOrThrow().Should().BeGreaterThanOrEqualTo(0);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_SearchByHarvestYear_CorrectRecordsReturned()
+    {
+        // Arrange
+        var tempDir = CreateTempDirectory();
+        var fileManager = new SequentialHeapFileManager(tempDir, 1024 * 10);
+        await fileManager.InitializeAsync();
+
+        var bufferManager = new LruBufferManager(fileManager, 3);
+        await bufferManager.InitializeAsync();
+
+        var bPlusTree = new BPlusTreeIndex<int>(Path.Combine(tempDir, "index.txt"), 4);
+        await bPlusTree.InitializeAsync();
+
+        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
+
+        // Insert records with different harvest years
+        var recordsByYear = new Dictionary<int, List<WineRecord>>
+        {
+            [2018] = new()
+            {
+                new WineRecord(1, "Cabernet Sauvignon", 2018, WineType.Red),
+                new WineRecord(2, "Merlot Reserve", 2018, WineType.Red)
+            },
+            [2019] = new() { new WineRecord(3, "Chardonnay", 2019, WineType.White) },
+            [2020] = new()
+            {
+                new WineRecord(4, "Pinot Noir", 2020, WineType.Red),
+                new WineRecord(5, "Syrah", 2020, WineType.Red),
+                new WineRecord(6, "Malbec", 2020, WineType.Red)
+            }
+        };
+
+        // Insert all records
+        foreach (var year in recordsByYear.Keys)
+        foreach (var record in recordsByYear[year])
+        {
+            var result = await insertProcessor.ExecuteAsync(record);
+            result.IsSuccess.Should().BeTrue();
+        }
+
+        await bufferManager.FlushAllFramesAsync();
+
+        // Act & Assert - Search for each year and verify results
+        foreach (var year in recordsByYear.Keys)
+        {
+            var searchResult = await bPlusTree.SearchAsync(year);
+            searchResult.IsSuccess.Should().BeTrue();
+
+            var pageIds = searchResult.GetValueOrThrow();
+            pageIds.Should().NotBeEmpty();
+
+            // For each page ID returned from the index search
+            foreach (var pageId in pageIds)
+            {
+                var pageResult = await fileManager.ReadPageAsync(pageId);
+                pageResult.IsSuccess.Should().BeTrue();
+
+                var page = pageResult.GetValueOrThrow();
+
+                // The page should contain at least one record with the matching harvest year
+                page.Content.Should().Contain(r => r.HarvestYear == year);
+
+                // All records from this year in this page should match our original data
+                var matchingRecords = page.Content.Where(r => r.HarvestYear == year).ToList();
+                foreach (var record in matchingRecords)
+                    recordsByYear[year]
+                        .Should()
+                        .Contain(r =>
+                            r.WineId == record.WineId
+                            && r.Label == record.Label
+                            && r.HarvestYear == year
+                        );
+            }
+        }
     }
 }
