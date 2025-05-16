@@ -1,6 +1,6 @@
 using System.CommandLine;
+using System.Text;
 using Serilog;
-using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Services;
@@ -30,33 +30,73 @@ internal static class Program
 
             // Argument for page size
             var pageSizeArgument = new Argument<int>(
-                "page-size",
-                "B+ Tree page size (max children per node)"
+                "page-size-in-bytes",
+                "Heap file page size in bytes"
             );
-            pageSizeArgument.SetDefaultValue(4);
+            pageSizeArgument.SetDefaultValue(4096);
             rootCommand.AddArgument(pageSizeArgument);
+
+            // Argument for Max number of Keys per Node in B+ Tree
+            var maxKeysArgument = new Argument<int>(
+                "max-keys-per-node",
+                "Max number of keys per node in B+ Tree"
+            );
+            maxKeysArgument.SetDefaultValue(4);
+            rootCommand.AddArgument(maxKeysArgument);
+
+            // Argument for Heap Size In Bytes
+            var heapSizeArgument = new Argument<int>(
+                "heap-size-in-bytes",
+                "Heap size in bytes"
+            );
+            heapSizeArgument.SetDefaultValue(40 * 1024 * 1024); // 40 MB
+            rootCommand.AddArgument(heapSizeArgument);
+
+            // Argument for amount of page frames
+            var pageFramesArgument = new Argument<int>(
+                "amount-of-page-frames",
+                "Amount of page frames"
+            );
+            pageFramesArgument.SetDefaultValue(1);
+            rootCommand.AddArgument(pageFramesArgument);
+
+            // Argument for amount of index frames
+            var indexFramesArgument = new Argument<int>(
+                "amount-of-index-frames",
+                "Amount of index frames"
+            );
+            indexFramesArgument.SetDefaultValue(1);
+            rootCommand.AddArgument(indexFramesArgument);
 
             // Argument for commands input file
             var commandsArgument = new Argument<FileInfo?>(
                 "commands-file",
                 "Path to the file containing commands, or omit to use stdin"
             ) { Arity = ArgumentArity.ZeroOrOne };
+            commandsArgument.SetDefaultValue("in.txt");
             rootCommand.AddArgument(commandsArgument);
 
-            // Option for starting a REPL
-            var replOption = new Option<bool>(
-                "--repl",
-                "Start an interactive REPL for text matching"
-            );
-            rootCommand.AddOption(replOption);
+            // Argument for out file
+            var outFileArgument = new Argument<FileInfo?>(
+                "out-file",
+                "Path to the output file for results"
+            ) { Arity = ArgumentArity.ZeroOrOne };
+            outFileArgument.SetDefaultValue(new FileInfo("out.txt"));
+            rootCommand.AddArgument(outFileArgument);
+
 
             rootCommand.SetHandler(async context =>
             {
                 var wineData = context.ParseResult.GetValueForArgument(wineDataArgument);
-                var pageSize = context.ParseResult.GetValueForArgument(pageSizeArgument);
+                var pageSize = (ulong)context.ParseResult.GetValueForArgument(pageSizeArgument);
+                var heapSize = (ulong)context.ParseResult.GetValueForArgument(heapSizeArgument);
+                var maxKeys = (ulong)context.ParseResult.GetValueForArgument(maxKeysArgument);
+                var pageFrames = (ulong)context.ParseResult.GetValueForArgument(pageFramesArgument);
+                var indexFrames = (ulong)context.ParseResult.GetValueForArgument(indexFramesArgument);
                 var commandsFile = context.ParseResult.GetValueForArgument(commandsArgument);
-                var repl = context.ParseResult.GetValueForOption(replOption);
-                await RunApplication(wineData, pageSize, commandsFile, repl, context.Console);
+                var outFile = context.ParseResult.GetValueForArgument(outFileArgument);
+                await RunApplication(wineData, commandsFile, outFile, pageSize, heapSize, pageFrames, indexFrames,
+                    maxKeys);
             });
 
             return await rootCommand.InvokeAsync(args);
@@ -74,34 +114,19 @@ internal static class Program
 
     private static async Task RunApplication(
         FileInfo? wineDataFile,
-        int pageSize,
         FileInfo? commandsFile,
-        bool startRepl,
-        IConsole console
+        FileInfo? outFile,
+        ulong pageSizeInBytes,
+        ulong heapSizeInBytes,
+        ulong amountOfPageFrames,
+        ulong amountOfIndexFrames,
+        ulong maxNumberOfKeysPerNode
     )
     {
         // Parse wine data
         var wineDataPath = wineDataFile?.FullName ?? "YggdrasilVinum/Data/wines.csv";
-        Log.Debug("Using wine data file: {WineDataPath} - {PageSize}", wineDataPath, pageSize);
+        Log.Debug("Using wine data file: {WineDataPath}", wineDataPath);
 
-        var wineResult = WineDataParser.ParseCsvFile(wineDataPath);
-
-        if (wineResult.IsError)
-        {
-            var error = wineResult.GetErrorOrThrow();
-            Log.Error(
-                "Error parsing wine data: {ErrorMessage} at line {LineNumber}",
-                error.Message,
-                error.LineNumber
-            );
-            return;
-        }
-
-        var wines = wineResult.GetValueOrThrow();
-        Log.Information("Successfully parsed {Count} wine records", wines.Count);
-
-        var heapSizeInBytes = (ulong)40 * 1024 * 1024; // 40 MB
-        var pageSizeInBytes = (ulong)pageSize * 1024; // 1 KB
         var fileManager = ApplicationFactory.CreateFileManager(
             "./storage",
             heapSizeInBytes,
@@ -110,8 +135,6 @@ internal static class Program
 
         (await fileManager.InitializeAsync()).GetValueOrThrow();
 
-        var amountOfPageFrames = 1UL;
-        var amountOfIndexFrames = 1UL;
         var bufferManager = ApplicationFactory.CreateBufferManager(
             fileManager,
             amountOfPageFrames,
@@ -122,7 +145,7 @@ internal static class Program
 
         var bPlusTree = ApplicationFactory.CreateBPlusTree<int, RID>(
             "./storage/index.txt",
-            pageSize
+            (int)maxNumberOfKeysPerNode
         );
 
         (await bPlusTree.InitializeAsync()).GetValueOrThrow();
@@ -131,24 +154,8 @@ internal static class Program
         var equalityProcessor = new EqualitySearchProcessor(bufferManager, bPlusTree);
 
         var database = new Database(insertProcessor, equalityProcessor);
-
-        foreach (var wine in wines)
-        {
-            var result = await database.InsertAsync(wine);
-            if (result.IsError)
-            {
-                var error = result.GetErrorOrThrow();
-                Log.Error("Error inserting wine: {ErrorMessage}", error.Message);
-            }
-        }
-
-        Log.Information(
-            "Inserted {Count} wine records into the database",
-            database.GetRecordsInsertedCount()
-        );
-
-        if (commandsFile == null)
-            return;
+        var harvestYearSearchProcessor =
+            ApplicationFactory.CreateHarvestYearSearchProcessor("./storage/processed_wines.txt");
 
         Log.Debug("Processing commands from file: {CommandsFile}", commandsFile.FullName);
         var commandsResult = CommandParser.ParseCommandFile(commandsFile.FullName);
@@ -171,6 +178,11 @@ internal static class Program
             header.MaxChildren
         );
 
+        // Create StringBuilder for output content
+        var outputContent = new StringBuilder();
+        // Write the header line
+        outputContent.AppendLine($"FLH/{header.MaxChildren}");
+
         // Process each command
         foreach (var command in commands)
         {
@@ -179,8 +191,29 @@ internal static class Program
                 command.Type,
                 command.Key
             );
-            await ProcessCommandAsync(command, bPlusTree, wines, console);
+            var commandResult = await ProcessCommandAsync(command, database, harvestYearSearchProcessor, outputContent);
+            if (commandResult.IsError)
+            {
+                var error = commandResult.GetErrorOrThrow();
+                Log.Error("Error processing command: {ErrorMessage}", error);
+                return;
+            }
         }
+
+        // Add the height of the tree as the last line
+        outputContent.AppendLine($"H/{await bPlusTree.HeightAsync()}");
+
+        // Write the output content to file
+        if (outFile != null)
+            try
+            {
+                await File.WriteAllTextAsync(outFile.FullName, outputContent.ToString());
+                Log.Information("Output written to file: {OutFile}", outFile.FullName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error writing to output file: {OutFile}", outFile.FullName);
+            }
 
         var bufferFlushResult = await bufferManager.FlushAllFramesAsync();
         if (bufferFlushResult.IsError)
@@ -197,13 +230,69 @@ internal static class Program
         }
     }
 
-    private static async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(
+    private static async Task<Result<Unit, string>> ProcessCommandAsync(
         CommandParser.Command command,
-        IBPlusTreeIndex<int, RID> bPlusTree,
-        List<WineRecord> wines,
-        IConsole console
+        Database database,
+        HarvestYearSearchProcessor harvestYearSearchProcessor,
+        StringBuilder outputContent
     )
     {
-        throw new Exception("Not implemented");
+        switch (command.Type)
+        {
+            case CommandParser.CommandType.Insert:
+                var winesResult = await harvestYearSearchProcessor.SearchByHarvestYearAsync(command.Key);
+                if (winesResult.IsError)
+                {
+                    var error = winesResult.GetErrorOrThrow();
+                    Log.Error("Error searching for wine with harvest year {HarvestYear}: {ErrorMessage}", command.Key,
+                        error.Message);
+                    return Result<Unit, string>.Error(error.Message);
+                }
+
+                var wines = winesResult.GetValueOrThrow();
+
+                foreach (var wine in wines)
+                {
+                    var insertResult = await database.InsertAsync(wine);
+                    if (insertResult.IsError)
+                    {
+                        var error = insertResult.GetErrorOrThrow();
+                        Log.Error("Error inserting wine with ID {WineId}: {ErrorMessage}", wine.WineId, error.Message);
+                        return Result<Unit, string>.Error(error.Message);
+                    }
+
+                    Log.Debug("Inserted wine with ID {WineId}", wine.WineId);
+                }
+
+                outputContent.AppendLine($"INC:{command.Key}/{wines.Length}");
+
+                Log.Information("Inserted {WineCount} wines with harvest year {HarvestYear}", wines.Length,
+                    command.Key);
+                break;
+
+            case CommandParser.CommandType.Search:
+                var searchResult = await database.SearchAsync(command.Key);
+                if (searchResult.IsError)
+                {
+                    var error = searchResult.GetErrorOrThrow();
+                    Log.Error("Error searching for wine with ID {WineId}: {ErrorMessage}", command.Key, error.Message);
+                    return Result<Unit, string>.Error(error.Message);
+                }
+
+                var winesFound = searchResult.GetValueOrThrow();
+
+                // Write the search result to the output content
+                outputContent.AppendLine($"BUS=:{command.Key}/{winesFound.Length}");
+
+                foreach (var wine in winesFound)
+                    Log.Debug("Wine ID: {WineId}, Name: {WineName}", wine.WineId, wine.Label);
+
+                Log.Information("Found {WineCount} wines with harvest year {HarvestYear}", winesFound.Length,
+                    command.Key);
+
+                break;
+        }
+
+        return Result<Unit, string>.Success(new Unit());
     }
 }
