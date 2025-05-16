@@ -154,8 +154,18 @@ internal static class Program
         var equalityProcessor = new EqualitySearchProcessor(bufferManager, bPlusTree);
 
         var database = new Database(insertProcessor, equalityProcessor);
+
+        var wineProcessor = ApplicationFactory.CreateWineProcessor("./storage/processed_wines.txt");
         var harvestYearSearchProcessor =
-            ApplicationFactory.CreateHarvestYearSearchProcessor("./storage/processed_wines.txt");
+            ApplicationFactory.CreateHarvestYearSearchProcessor(wineProcessor);
+        var processResult = await wineProcessor.ProcessCsvFileAsync(wineDataPath);
+        if (processResult.IsError)
+        {
+            var error = processResult.GetErrorOrThrow();
+            Log.Error("Error processing wine data: {ErrorMessage}", error.Message);
+            return;
+        }
+
 
         Log.Debug("Processing commands from file: {CommandsFile}", commandsFile.FullName);
         var commandsResult = CommandParser.ParseCommandFile(commandsFile.FullName);
