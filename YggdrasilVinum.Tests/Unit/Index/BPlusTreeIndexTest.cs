@@ -24,7 +24,7 @@ public class BPlusTreeIndexTest : IDisposable
     public void Constructor_CreatesNewFiles_WhenNotExist()
     {
         // Act
-        _ = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        _ = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Assert
         Assert.True(File.Exists(_testIndexPath));
@@ -34,7 +34,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Search_EmptyTree_ReturnsEmptyList()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         var result = await UnwrapResult(tree.SearchAsync(1));
@@ -47,7 +47,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_SingleValue_CanBeRetrieved()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         var pageId = 12345UL;
@@ -63,7 +63,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_MultipleValues_CanBeRetrieved()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         await tree.InsertAsync(1, 100UL);
@@ -80,7 +80,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_DuplicateKeys_StoresAllValues()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         await tree.InsertAsync(10, 1000UL);
@@ -97,7 +97,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Search_NonExistentKey_ReturnsEmptyList()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
         await tree.InsertAsync(1, 100UL);
 
         // Act
@@ -111,7 +111,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Height_EmptyTree_ReturnsZero()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act & Assert
         Assert.Equal(0, await UnwrapResult(tree.HeightAsync()));
@@ -121,7 +121,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Height_AfterSplits_IncreasesCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         for (var i = 1; i <= 10; i++) await tree.InsertAsync(i, (ulong)i * 100);
@@ -134,7 +134,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_ManyValues_MaintainsCorrectOrder()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         await tree.InsertAsync(8, 800UL);
@@ -155,7 +155,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_EnoughValuesToCauseSplits_CanStillRetrieveAll()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         for (var i = 1; i <= 20; i++) await tree.InsertAsync(i, (ulong)i * 100);
@@ -170,11 +170,11 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task DataPersistence_CanRetrieveAfterRecreatingTree()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
         await tree.InsertAsync(1, 12345UL);
 
         // Act
-        var newTree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var newTree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
         var result = await UnwrapResult(newTree.SearchAsync(1));
 
         // Assert
@@ -186,7 +186,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Height_GrowsIncreasesPredictably_WithInsertions()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act & Assert
         Assert.Equal(0, await UnwrapResult(tree.HeightAsync()));
@@ -217,7 +217,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_ReverseOrder_MaintainsCorrectStructure()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         for (var i = 20; i > 0; i--)
@@ -232,7 +232,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_NonSequentialKeys_MaintainsCorrectOrder()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         var keys = new[] { 50, 25, 75, 12, 37, 62, 87 };
@@ -248,7 +248,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_NegativeKeys_WorksCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         await tree.InsertAsync(-10, 1000UL);
@@ -270,7 +270,7 @@ public class BPlusTreeIndexTest : IDisposable
         const string indexPath = "string_index.txt";
         try
         {
-            var tree = new BPlusTreeIndex<string>(indexPath, _defaultDegree);
+            var tree = new BPlusTreeIndex<string, ulong>(indexPath, _defaultDegree);
 
             // Act
             await tree.InsertAsync("apple", 1UL);
@@ -299,7 +299,7 @@ public class BPlusTreeIndexTest : IDisposable
         const string indexPath = "double_index.txt";
         try
         {
-            var tree = new BPlusTreeIndex<double>(indexPath, _defaultDegree);
+            var tree = new BPlusTreeIndex<double, ulong>(indexPath, _defaultDegree);
 
             // Act
             await tree.InsertAsync(1.5, 15UL);
@@ -325,7 +325,7 @@ public class BPlusTreeIndexTest : IDisposable
         const string indexPath = "pageid_index.txt";
         try
         {
-            var tree = new BPlusTreeIndex<int>(indexPath, _defaultDegree);
+            var tree = new BPlusTreeIndex<int, ulong>(indexPath, _defaultDegree);
 
             // Act
             var maxPageId = ulong.MaxValue;
@@ -348,7 +348,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task Insert_LargePageIds_HandledCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         var largePageId1 = 18446744073709551000; // Close to ulong.MaxValue
@@ -366,7 +366,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task LargeDataset_PerformsCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>(_testIndexPath, _defaultDegree);
+        var tree = new BPlusTreeIndex<int, ulong>(_testIndexPath, _defaultDegree);
 
         // Act
         for (var i = 1; i <= 100; i++)
@@ -383,8 +383,8 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task CustomDegree_AffectsTreeStructure()
     {
         // Arrange
-        var smallDegreeTree = new BPlusTreeIndex<int>("small_degree.txt", 3);
-        var largeDegreeTree = new BPlusTreeIndex<int>("large_degree.txt", 10);
+        var smallDegreeTree = new BPlusTreeIndex<int, ulong>("small_degree.txt", 3);
+        var largeDegreeTree = new BPlusTreeIndex<int, ulong>("large_degree.txt", 10);
 
         try
         {
@@ -414,7 +414,7 @@ public class BPlusTreeIndexTest : IDisposable
     public async Task MinimumDegree_WorksCorrectly()
     {
         // Arrange
-        var tree = new BPlusTreeIndex<int>("min_degree.txt", 2);
+        var tree = new BPlusTreeIndex<int, ulong>("min_degree.txt", 2);
 
         try
         {

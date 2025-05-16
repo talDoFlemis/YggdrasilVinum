@@ -56,10 +56,11 @@ public static class ApplicationFactory
     /// <summary>
     ///     Creates and initializes a B+ tree
     /// </summary>
-    public static IBPlusTreeIndex<TKey> CreateBPlusTree<TKey>(string indexPath, int pageSize)
+    public static IBPlusTreeIndex<TKey, TValue> CreateBPlusTree<TKey, TValue>(string indexPath, int degree)
         where TKey : IComparable<TKey>
+        where TValue : IParsable<TValue>
     {
-        return new BPlusTreeIndex<TKey>(indexPath, pageSize);
+        return new BPlusTreeIndex<TKey, TValue>(indexPath, degree);
     }
 
 

@@ -120,7 +120,7 @@ internal static class Program
 
         (await bufferManager.InitializeAsync()).GetValueOrThrow();
 
-        var bPlusTree = ApplicationFactory.CreateBPlusTree<int>(
+        var bPlusTree = ApplicationFactory.CreateBPlusTree<int, RID>(
             "./storage/index.txt",
             pageSize
         );
@@ -128,7 +128,7 @@ internal static class Program
         (await bPlusTree.InitializeAsync()).GetValueOrThrow();
 
         var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
-        var equalityProcessor = new EqualitySearchProcessor();
+        var equalityProcessor = new EqualitySearchProcessor(bufferManager, bPlusTree);
 
         var database = new Database(insertProcessor, equalityProcessor);
 
@@ -199,68 +199,11 @@ internal static class Program
 
     private static async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(
         CommandParser.Command command,
-        IBPlusTreeIndex<int> bPlusTree,
+        IBPlusTreeIndex<int, RID> bPlusTree,
         List<WineRecord> wines,
         IConsole console
     )
     {
-        switch (command.Type)
-        {
-            case CommandParser.CommandType.Insert:
-                var matchingWine = wines.FirstOrDefault(w => w.WineId == command.Key);
-                if (matchingWine.WineId == command.Key)
-                {
-                    var insertResult = await bPlusTree.InsertAsync(matchingWine.WineId, (ulong)matchingWine.WineId);
-                    if (insertResult.IsError)
-                    {
-                        console.WriteLine(
-                            $"Error inserting wine with ID {command.Key}: {insertResult.GetErrorOrThrow().Message}");
-                        return insertResult;
-                    }
-
-                    console.WriteLine($"Inserted wine with ID {command.Key}: {matchingWine.Label}");
-                }
-                else
-                {
-                    console.WriteLine($"No wine found with ID {command.Key}");
-                }
-
-                break;
-
-            case CommandParser.CommandType.Search:
-                var searchResult = await bPlusTree.SearchAsync(command.Key);
-                if (searchResult.IsError)
-                {
-                    console.WriteLine(
-                        $"Error searching for wine with ID {command.Key}: {searchResult.GetErrorOrThrow().Message}");
-                    return Result<Unit, BPlusTreeError>.Error(searchResult.GetErrorOrThrow());
-                }
-
-                var pageIds = searchResult.GetValueOrThrow();
-                if (pageIds.Count > 0)
-                {
-                    console.WriteLine($"Found {pageIds.Count} matching wines:");
-                    foreach (var pageId in pageIds)
-                    {
-                        // For simplicity, assuming pageId correlates to wineId
-                        var wineId = (int)pageId;
-                        var wine = wines.FirstOrDefault(w => w.WineId == wineId);
-                        if (wine != null)
-                            console.WriteLine(
-                                $"  Wine ID: {wine.WineId}, Label: {wine.Label}, Harvest Year: {wine.HarvestYear}, Type: {wine.Type}"
-                            );
-                        else
-                            console.WriteLine($"  Found pageId {pageId} but no matching wine");
-                    }
-                }
-                else
-                {
-                    console.WriteLine($"No wines found with ID {command.Key}");
-                }
-
-                break;
-        }
-
-        return Result<Unit, BPlusTreeError>.Success(new Unit());
+        throw new Exception("Not implemented");
     }
 }
