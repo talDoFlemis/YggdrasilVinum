@@ -21,80 +21,80 @@ internal static class Program
             var rootCommand = new RootCommand("YggdrasilVinum Wine Database CLI");
 
             // Argument for wine data file
-            var wineDataArgument = new Argument<FileInfo?>(
-                "wine-data",
+            var wineDataArgument = new Option<FileInfo?>(
+                "--wine-data",
                 "Path to the wine data CSV file that will be parsed"
             ) { Arity = ArgumentArity.ZeroOrOne };
             wineDataArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/wines.csv"));
-            rootCommand.AddArgument(wineDataArgument);
+            rootCommand.AddOption(wineDataArgument);
 
             // Argument for page size
-            var pageSizeArgument = new Argument<int>(
-                "page-size-in-bytes",
+            var pageSizeArgument = new Option<int>(
+                "--page-size-in-bytes",
                 "Heap file page size in bytes"
             );
             pageSizeArgument.SetDefaultValue(4096);
-            rootCommand.AddArgument(pageSizeArgument);
+            rootCommand.AddOption(pageSizeArgument);
 
             // Argument for Max number of Keys per Node in B+ Tree
-            var maxKeysArgument = new Argument<int>(
-                "max-keys-per-node",
+            var maxKeysArgument = new Option<int>(
+                "--max-keys-per-node",
                 "Max number of keys per node in B+ Tree"
             );
             maxKeysArgument.SetDefaultValue(4);
-            rootCommand.AddArgument(maxKeysArgument);
+            rootCommand.AddOption(maxKeysArgument);
 
             // Argument for Heap Size In Bytes
-            var heapSizeArgument = new Argument<int>(
-                "heap-size-in-bytes",
+            var heapSizeArgument = new Option<int>(
+                "--heap-size-in-bytes",
                 "Heap size in bytes"
             );
             heapSizeArgument.SetDefaultValue(40 * 1024 * 1024); // 40 MB
-            rootCommand.AddArgument(heapSizeArgument);
+            rootCommand.AddOption(heapSizeArgument);
 
             // Argument for amount of page frames
-            var pageFramesArgument = new Argument<int>(
-                "amount-of-page-frames",
+            var pageFramesArgument = new Option<int>(
+                "--amount-of-page-frames",
                 "Amount of page frames"
             );
             pageFramesArgument.SetDefaultValue(1);
-            rootCommand.AddArgument(pageFramesArgument);
+            rootCommand.AddOption(pageFramesArgument);
 
             // Argument for amount of index frames
-            var indexFramesArgument = new Argument<int>(
-                "amount-of-index-frames",
+            var indexFramesArgument = new Option<int>(
+                "--amount-of-index-frames",
                 "Amount of index frames"
             );
             indexFramesArgument.SetDefaultValue(1);
-            rootCommand.AddArgument(indexFramesArgument);
+            rootCommand.AddOption(indexFramesArgument);
 
             // Argument for commands input file
-            var commandsArgument = new Argument<FileInfo?>(
-                "commands-file",
+            var commandsArgument = new Option<FileInfo?>(
+                "--commands-file",
                 "Path to the file containing commands, or omit to use stdin"
             ) { Arity = ArgumentArity.ZeroOrOne };
             commandsArgument.SetDefaultValue("in.txt");
-            rootCommand.AddArgument(commandsArgument);
+            rootCommand.AddOption(commandsArgument);
 
             // Argument for out file
-            var outFileArgument = new Argument<FileInfo?>(
-                "out-file",
+            var outFileArgument = new Option<FileInfo?>(
+                "--out-file",
                 "Path to the output file for results"
             ) { Arity = ArgumentArity.ZeroOrOne };
             outFileArgument.SetDefaultValue(new FileInfo("out.txt"));
-            rootCommand.AddArgument(outFileArgument);
+            rootCommand.AddOption(outFileArgument);
 
 
             rootCommand.SetHandler(async context =>
             {
-                var wineData = context.ParseResult.GetValueForArgument(wineDataArgument);
-                var pageSize = (ulong)context.ParseResult.GetValueForArgument(pageSizeArgument);
-                var heapSize = (ulong)context.ParseResult.GetValueForArgument(heapSizeArgument);
-                var maxKeys = (ulong)context.ParseResult.GetValueForArgument(maxKeysArgument);
-                var pageFrames = (ulong)context.ParseResult.GetValueForArgument(pageFramesArgument);
-                var indexFrames = (ulong)context.ParseResult.GetValueForArgument(indexFramesArgument);
-                var commandsFile = context.ParseResult.GetValueForArgument(commandsArgument);
-                var outFile = context.ParseResult.GetValueForArgument(outFileArgument);
+                var wineData = context.ParseResult.GetValueForOption(wineDataArgument);
+                var pageSize = (ulong)context.ParseResult.GetValueForOption(pageSizeArgument);
+                var heapSize = (ulong)context.ParseResult.GetValueForOption(heapSizeArgument);
+                var maxKeys = (ulong)context.ParseResult.GetValueForOption(maxKeysArgument);
+                var pageFrames = (ulong)context.ParseResult.GetValueForOption(pageFramesArgument);
+                var indexFrames = (ulong)context.ParseResult.GetValueForOption(indexFramesArgument);
+                var commandsFile = context.ParseResult.GetValueForOption(commandsArgument);
+                var outFile = context.ParseResult.GetValueForOption(outFileArgument);
                 await RunApplication(wineData, commandsFile, outFile, pageSize, heapSize, pageFrames, indexFrames,
                     maxKeys);
             });
@@ -218,6 +218,7 @@ internal static class Program
             Log.Error("Error getting height of B+ tree: {ErrorMessage}", error.Message);
             return;
         }
+
         outputContent.AppendLine($"H/{height.GetValueOrThrow()}");
 
         // Write the output content to file

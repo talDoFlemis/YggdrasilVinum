@@ -61,16 +61,16 @@ graph TD
 
 ### Componentes Funcionais
 
-| Componente | Responsabilidade |
-|------------|-----------------|
-| Buffer | Gerencia buffers limitados de memória para páginas de dados e índice |
-| Core | Contém as classes principais e fábricas da aplicação |
-| Data | Armazena os dados brutos de vinhos |
-| Index | Implementa a estrutura de dados de árvore B+ |
-| Models | Define as entidades e estruturas de dados principais |
-| Parsers | Processa entradas de usuário e arquivos de comando |
-| Services | Serviços para busca, inserção e operações relacionadas a vinhos |
-| Storage | Gerencia o armazenamento persistente em disco |
+| Componente | Responsabilidade                                                     |
+| ---------- | -------------------------------------------------------------------- |
+| Buffer     | Gerencia buffers limitados de memória para páginas de dados e índice |
+| Core       | Contém as classes principais e fábricas da aplicação                 |
+| Data       | Armazena os dados brutos de vinhos                                   |
+| Index      | Implementa a estrutura de dados de árvore B+                         |
+| Models     | Define as entidades e estruturas de dados principais                 |
+| Parsers    | Processa entradas de usuário e arquivos de comando                   |
+| Services   | Serviços para busca, inserção e operações relacionadas a vinhos      |
+| Storage    | Gerencia o armazenamento persistente em disco                        |
 
 ## Fluxo de Dados
 
@@ -83,11 +83,11 @@ sequenceDiagram
     participant Index
     participant Buffer
     participant Storage
-    
+
     User->>CLI: Executar comando
     CLI->>Parser: Interpretar entrada
     Parser->>Service: Processar comando
-    
+
     alt Inserção
         Service->>Index: Inserir chave (ano_colheita)
         Index->>Buffer: Solicitar página de índice
@@ -104,7 +104,7 @@ sequenceDiagram
         Storage->>Buffer: Retornar dados
         Buffer->>Service: Fornecer dados
     end
-    
+
     Service->>CLI: Retornar resultados
     CLI->>User: Exibir resultado
 ```
@@ -124,17 +124,17 @@ graph TD
         A[Arquivo de Dados]
         B[Arquivo de Índice]
     end
-    
+
     subgraph Buffer
         C[Quadros de Página de Dados]
         D[Quadros de Página de Índice]
     end
-    
+
     E[Processador de Buscas] --> C
     E --> D
     F[Processador de Inserções] --> C
     F --> D
-    
+
     C <--> A
     D <--> B
 ```
@@ -149,27 +149,28 @@ A árvore B+ é a estrutura de índice principal, implementando:
 graph TD
     A[Raiz] --> B[Nó Interno 1]
     A --> C[Nó Interno 2]
-    
+
     B --> D[Folha 1]
     B --> E[Folha 2]
-    
+
     C --> F[Folha 3]
     C --> G[Folha 4]
-    
+
     D -.-> E
     E -.-> F
     F -.-> G
-    
+
     classDef root fill:#f9f,stroke:#333,stroke-width:2px;
     classDef internal fill:#bbf,stroke:#333,stroke-width:1px;
     classDef leaf fill:#bfb,stroke:#333,stroke-width:1px;
-    
+
     class A root;
     class B,C internal;
     class D,E,F,G leaf;
 ```
 
 Características:
+
 - Estrutura de árvore balanceada
 - Nós folha vinculados para pesquisa sequencial eficiente
 - Suporte para inserção e busca por igualdade
@@ -203,25 +204,25 @@ classDiagram
         +int HarvestYear
         +WineType Type
     }
-    
+
     class Page {
         +ulong PageId
         +bool IsDirty
         +byte[] Data
     }
-    
+
     class RID {
         +ulong PageId
         +ushort SlotNumber
     }
-    
+
     class Result~T, E~ {
         +bool IsSuccess
         +bool IsError
         +T GetValueOrThrow()
         +E GetErrorOrThrow()
     }
-    
+
     class IBufferManager {
         +InitializeAsync()
         +GetRandomPageAsync()
@@ -231,7 +232,7 @@ classDiagram
         +SetPageDirty(ulong pageId)
         +FlushAllFramesAsync()
     }
-    
+
     class IBPlusTreeIndex~TKey, TValue~ {
         +InitializeAsync()
         +SearchAsync(TKey key)
@@ -239,16 +240,16 @@ classDiagram
         +HeightAsync()
         +PrintTreeAsync()
     }
-    
+
     class HarvestYearSearchProcessor {
         +SearchByHarvestYearAsync(int harvestYear)
     }
-    
+
     class Database {
         +InsertAsync(WineRecord wine)
         +SearchAsync(int harvestYear)
     }
-    
+
     WineRecord --> RID
     Database --> IBufferManager
     Database --> IBPlusTreeIndex
@@ -328,16 +329,16 @@ dotnet run --project YggdrasilVinum/YggdrasilVinum.csproj -- [argumentos]
 
 Argumentos disponíveis:
 
-| Argumento | Descrição | Padrão |
-|-----------|-----------|--------|
-| wine-data | Caminho para o arquivo CSV de dados de vinhos | YggdrasilVinum/Data/wines.csv |
-| page-size-in-bytes | Tamanho da página em bytes | 4096 |
-| max-keys-per-node | Máximo de chaves por nó na árvore B+ | 4 |
-| heap-size-in-bytes | Tamanho do heap em bytes | 40 MB |
-| amount-of-page-frames | Quantidade de quadros de página | 1 |
-| amount-of-index-frames | Quantidade de quadros de índice | 1 |
-| commands-file | Arquivo de entrada com comandos | in.txt |
-| out-file | Arquivo de saída com resultados | out.txt |
+| Argumento              | Descrição                                     | Padrão                        |
+| ---------------------- | --------------------------------------------- | ----------------------------- |
+| wine-data              | Caminho para o arquivo CSV de dados de vinhos | YggdrasilVinum/Data/wines.csv |
+| page-size-in-bytes     | Tamanho da página em bytes                    | 4096                          |
+| max-keys-per-node      | Máximo de chaves por nó na árvore B+          | 4                             |
+| heap-size-in-bytes     | Tamanho do heap em bytes                      | 40 MB                         |
+| amount-of-page-frames  | Quantidade de quadros de página               | 1                             |
+| amount-of-index-frames | Quantidade de quadros de índice               | 1                             |
+| commands-file          | Arquivo de entrada com comandos               | in.txt                        |
+| out-file               | Arquivo de saída com resultados               | out.txt                       |
 
 ## Usando Docker
 
@@ -362,7 +363,7 @@ docker run --rm \
   -v $(pwd)/storage:/app/storage \
   -v $(pwd)/in.txt:/app/in.txt \
   -v $(pwd)/out.txt:/app/out.txt \
-  yggdrasilvinum:latest /app/data/wines.csv 4096 4 41943040 1 1 /app/in.txt /app/out.txt
+  yggdrasilvinum:latest --wine-data /app/data/wines.csv --page-size-in-bytes 4096 --max-keys-per-node 4 --heap-size-in-bytes 41943040 --amount-of-page-frames 1 --amount-of-index-frames 1 --commands-file /app/in.txt --out-file /app/out.txt
 ```
 
 ### Estrutura do Dockerfile
@@ -370,15 +371,17 @@ docker run --rm \
 O Dockerfile do projeto inclui:
 
 1. **Build Stage**: Utiliza a imagem SDK do .NET 9.0 para compilar a aplicação
-   - Restaura dependências
-   - Compila o código-fonte
-   - Publica a aplicação
+
+    - Restaura dependências
+    - Compila o código-fonte
+    - Publica a aplicação
 
 2. **Runtime Stage**: Utiliza a imagem runtime do .NET 9.0 para execução
-   - Cria diretórios necessários (logs, storage, data)
-   - Copia arquivos de dados e configuração
-   - Configura variáveis de ambiente
-   - Cria usuário não-root para segurança
+
+    - Cria diretórios necessários (logs, storage, data)
+    - Copia arquivos de dados e configuração
+    - Configura variáveis de ambiente
+    - Cria usuário não-root para segurança
 
 3. **Entrypoint**: Configura a entrada para a aplicação, permitindo passagem de argumentos
 
