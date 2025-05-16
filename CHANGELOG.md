@@ -1,3 +1,19 @@
+# [1.2.0](https://github.com/talDoFlemis/YggdrasilVinum/compare/v1.1.0...v1.2.0) (2025-05-16)
+
+
+### Bug Fixes
+
+* change argument to use option ([1ce2962](https://github.com/talDoFlemis/YggdrasilVinum/commit/1ce29629e32db666ea8c205d3bd5e047d754f103))
+* **Program:** get tree height properly ([4c623c2](https://github.com/talDoFlemis/YggdrasilVinum/commit/4c623c2ada7aa8f111e3b3c563552d39f50e30f4))
+
+
+### Features
+
+* add HarvestYearSearchProcessor ([967c8c8](https://github.com/talDoFlemis/YggdrasilVinum/commit/967c8c875d77af9680b9b71259bbd8ecd49126af))
+* add insertion to file on program ([d2d640f](https://github.com/talDoFlemis/YggdrasilVinum/commit/d2d640f821e424c84cd8aecd331314a102185446))
+* add WineProcessor ([68288d8](https://github.com/talDoFlemis/YggdrasilVinum/commit/68288d865beee712761ad896761331f7d7667cd0))
+* process wine csv ([2c0cf0e](https://github.com/talDoFlemis/YggdrasilVinum/commit/2c0cf0ea01be63955f70ff5d0532b500fc4eb0f8))
+
 # [1.1.0](https://github.com/talDoFlemis/YggdrasilVinum/compare/v1.0.1...v1.1.0) (2025-05-15)
 
 
