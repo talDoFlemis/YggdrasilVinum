@@ -211,7 +211,14 @@ internal static class Program
         }
 
         // Add the height of the tree as the last line
-        outputContent.AppendLine($"H/{await bPlusTree.HeightAsync()}");
+        var height = await bPlusTree.HeightAsync();
+        if (height.IsError)
+        {
+            var error = height.GetErrorOrThrow();
+            Log.Error("Error getting height of B+ tree: {ErrorMessage}", error.Message);
+            return;
+        }
+        outputContent.AppendLine($"H/{height.GetValueOrThrow()}");
 
         // Write the output content to file
         if (outFile != null)
