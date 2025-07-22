@@ -20,11 +20,15 @@
 
 ## Introdução
 
-YggdrasilVinum é uma aplicação .NET projetada para gerenciar e analisar dados de vinhos, implementando uma estrutura de índice de árvore B+ para armazenamento e consulta eficientes. O sistema permite inserções e buscas por igualdade em registros de vinhos com base no ano de colheita.
+YggdrasilVinum é uma aplicação .NET projetada para gerenciar e analisar dados de vinhos, implementando uma estrutura de
+índice de árvore B+ para armazenamento e consulta eficientes. O sistema permite inserções e buscas por igualdade em
+registros de vinhos com base no ano de colheita.
 
 ## Visão Geral
 
-O projeto YggdrasilVinum foi desenvolvido como uma implementação de um sistema de gerenciamento de banco de dados simplificado, focado na indexação eficiente utilizando árvores B+. A aplicação lida com dados de vinhos armazenados em arquivos CSV, processando-os em um sistema de armazenamento em disco com buffer limitado.
+O projeto YggdrasilVinum foi desenvolvido como uma implementação de um sistema de gerenciamento de banco de dados
+simplificado, focado na indexação eficiente utilizando árvores B+. A aplicação lida com dados de vinhos armazenados em
+arquivos CSV, processando-os em um sistema de armazenamento em disco com buffer limitado.
 
 ## Arquitetura
 
@@ -62,7 +66,7 @@ graph TD
 ### Componentes Funcionais
 
 | Componente | Responsabilidade                                                     |
-| ---------- | -------------------------------------------------------------------- |
+|------------|----------------------------------------------------------------------|
 | Buffer     | Gerencia buffers limitados de memória para páginas de dados e índice |
 | Core       | Contém as classes principais e fábricas da aplicação                 |
 | Data       | Armazena os dados brutos de vinhos                                   |
@@ -330,7 +334,7 @@ dotnet run --project YggdrasilVinum/YggdrasilVinum.csproj -- [argumentos]
 Argumentos disponíveis:
 
 | Argumento              | Descrição                                     | Padrão                        |
-| ---------------------- | --------------------------------------------- | ----------------------------- |
+|------------------------|-----------------------------------------------|-------------------------------|
 | wine-data              | Caminho para o arquivo CSV de dados de vinhos | YggdrasilVinum/Data/wines.csv |
 | page-size-in-bytes     | Tamanho da página em bytes                    | 4096                          |
 | max-keys-per-node      | Máximo de chaves por nó na árvore B+          | 4                             |
@@ -342,7 +346,8 @@ Argumentos disponíveis:
 
 ## Usando Docker
 
-O YggdrasilVinum pode ser executado facilmente utilizando Docker, que proporciona um ambiente isolado e consistente para a aplicação.
+O YggdrasilVinum pode ser executado facilmente utilizando Docker, que proporciona um ambiente isolado e consistente para
+a aplicação.
 
 ### Construindo a Imagem Docker
 
