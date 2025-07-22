@@ -1,9 +1,14 @@
 using System.CommandLine;
+using System.Diagnostics;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using YggdrasilVinum.Buffer;
+using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Services;
+using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum;
 
@@ -95,8 +100,21 @@ internal static class Program
                 var indexFrames = (ulong)context.ParseResult.GetValueForOption(indexFramesArgument);
                 var commandsFile = context.ParseResult.GetValueForOption(commandsArgument);
                 var outFile = context.ParseResult.GetValueForOption(outFileArgument);
-                await RunApplication(wineData, commandsFile, outFile, pageSize, heapSize, pageFrames, indexFrames,
-                    maxKeys);
+
+                // Create application configuration
+                var configuration = new ApplicationConfiguration
+                {
+                    StoragePath = "./storage",
+                    HeapSizeInBytes = heapSize,
+                    PageSizeInBytes = pageSize,
+                    AmountOfPageFrames = pageFrames,
+                    AmountOfIndexFrames = indexFrames,
+                    IndexPath = "./storage/index.txt",
+                    MaxNumberOfKeysPerNode = (int)maxKeys,
+                    ProcessedWinesPath = "./storage/processed_wines.txt"
+                };
+
+                await RunApplication(wineData, commandsFile, outFile, configuration);
             });
 
             return await rootCommand.InvokeAsync(args);
@@ -116,135 +134,136 @@ internal static class Program
         FileInfo? wineDataFile,
         FileInfo? commandsFile,
         FileInfo? outFile,
-        ulong pageSizeInBytes,
-        ulong heapSizeInBytes,
-        ulong amountOfPageFrames,
-        ulong amountOfIndexFrames,
-        ulong maxNumberOfKeysPerNode
-    )
+        ApplicationConfiguration configuration)
     {
-        // Parse wine data
-        var wineDataPath = wineDataFile?.FullName ?? "YggdrasilVinum/Data/wines.csv";
-        Log.Debug("Using wine data file: {WineDataPath}", wineDataPath);
+        // Configure dependency injection
+        var services = new ServiceCollection();
+        services.ConfigureApplicationServices(configuration);
 
-        var fileManager = ApplicationFactory.CreateFileManager(
-            "./storage",
-            heapSizeInBytes,
-            pageSizeInBytes
-        );
+        var serviceProvider = services.BuildServiceProvider();
 
-        (await fileManager.InitializeAsync()).GetValueOrThrow();
-
-        var bufferManager = ApplicationFactory.CreateBufferManager(
-            fileManager,
-            amountOfPageFrames,
-            amountOfIndexFrames
-        );
-
-        (await bufferManager.InitializeAsync()).GetValueOrThrow();
-
-        var bPlusTree = ApplicationFactory.CreateBPlusTree<int, RID>(
-            "./storage/index.txt",
-            (int)maxNumberOfKeysPerNode
-        );
-
-        (await bPlusTree.InitializeAsync()).GetValueOrThrow();
-
-        var insertProcessor = new InsertProcessor(bufferManager, fileManager, bPlusTree);
-        var equalityProcessor = new EqualitySearchProcessor(bufferManager, bPlusTree);
-
-        var database = new Database(insertProcessor, equalityProcessor);
-
-        var wineProcessor = ApplicationFactory.CreateWineProcessor("./storage/processed_wines.txt");
-        var harvestYearSearchProcessor =
-            ApplicationFactory.CreateHarvestYearSearchProcessor(wineProcessor);
-        var processResult = await wineProcessor.ProcessCsvFileAsync(wineDataPath);
-        if (processResult.IsError)
+        try
         {
-            var error = processResult.GetErrorOrThrow();
-            Log.Error("Error processing wine data: {ErrorMessage}", error.Message);
-            return;
-        }
-
-        // Create command processor factory and strategies
-        var commandProcessorFactory = new CommandProcessorFactory(database, harvestYearSearchProcessor);
-        var commandProcessors = commandProcessorFactory.CreateCommandProcessors();
-
-        Log.Debug("Processing commands from file: {CommandsFile}", commandsFile.FullName);
-        var commandsResult = CommandParser.ParseCommandFile(commandsFile.FullName);
-
-        if (commandsResult.IsError)
-        {
-            var error = commandsResult.GetErrorOrThrow();
-            Log.Error(
-                "Error parsing commands: {ErrorMessage} at line {LineNumber}",
-                error.Message,
-                error.LineNumber
-            );
-            return;
-        }
-
-        var (header, commands) = commandsResult.GetValueOrThrow();
-        Log.Information(
-            "Successfully parsed {CommandCount} commands with max children: {MaxChildren}",
-            commands.Count,
-            header.MaxChildren
-        );
-
-        // Create StringBuilder for output content
-        var outputContent = new StringBuilder();
-        // Write the header line
-        outputContent.AppendLine($"FLH/{header.MaxChildren}");
-
-        // Process each command using Strategy pattern
-        foreach (var command in commands)
-        {
-            Log.Information(
-                "Processing command: {CommandType} with key: {CommandKey}",
-                command.Type,
-                command.Key
-            );
-
-            if (commandProcessors.TryGetValue(command.Type, out var processor))
+            // Initialize all services
+            var initResult = await serviceProvider.InitializeServicesAsync();
+            if (initResult.IsError)
             {
-                var commandResult = await processor.ExecuteAsync(command, outputContent);
-                if (commandResult.IsError)
+                var error = initResult.GetErrorOrThrow();
+                Log.Error("Failed to initialize services: {ErrorMessage}", error);
+                return;
+            }
+
+            // Parse wine data
+            var wineDataPath = wineDataFile?.FullName ?? "YggdrasilVinum/Data/wines.csv";
+            Log.Debug("Using wine data file: {WineDataPath}", wineDataPath);
+
+            // Get services from DI container
+            var wineProcessor = serviceProvider.GetRequiredService<IWineProcessor>();
+            var bPlusTree = serviceProvider.GetRequiredService<IBPlusTreeIndex<int, RID>>();
+
+            // Process wine data
+            var processResult = await wineProcessor.ProcessCsvFileAsync(wineDataPath);
+            if (processResult.IsError)
+            {
+                var error = processResult.GetErrorOrThrow();
+                Log.Error("Error processing wine data: {ErrorMessage}", error.Message);
+                return;
+            }
+
+            // Create command processor factory and strategies
+            var commandProcessorFactory = serviceProvider.GetRequiredService<CommandProcessorFactory>();
+            var commandProcessors = commandProcessorFactory.CreateCommandProcessors();
+
+            Debug.Assert(commandsFile != null, nameof(commandsFile) + " != null");
+
+            Log.Debug("Processing commands from file: {CommandsFile}", commandsFile.FullName);
+            var commandsResult = CommandParser.ParseCommandFile(commandsFile.FullName);
+
+            if (commandsResult.IsError)
+            {
+                var error = commandsResult.GetErrorOrThrow();
+                Log.Error(
+                    "Error parsing commands: {ErrorMessage} at line {LineNumber}",
+                    error.Message,
+                    error.LineNumber
+                );
+                return;
+            }
+
+            var (header, commands) = commandsResult.GetValueOrThrow();
+            Log.Information(
+                "Successfully parsed {CommandCount} commands with max children: {MaxChildren}",
+                commands.Count,
+                header.MaxChildren
+            );
+
+            // Create StringBuilder for output content
+            var outputContent = new StringBuilder();
+            // Write the header line
+            outputContent.AppendLine($"FLH/{header.MaxChildren}");
+
+            // Process each command using Strategy pattern
+            foreach (var command in commands)
+            {
+                Log.Information(
+                    "Processing command: {CommandType} with key: {CommandKey}",
+                    command.Type,
+                    command.Key
+                );
+
+                if (commandProcessors.TryGetValue(command.Type, out var processor))
                 {
-                    var error = commandResult.GetErrorOrThrow();
-                    Log.Error("Error processing command: {ErrorMessage}", error);
+                    var commandResult = await processor.ExecuteAsync(command, outputContent);
+                    if (commandResult.IsError)
+                    {
+                        var error = commandResult.GetErrorOrThrow();
+                        Log.Error("Error processing command: {ErrorMessage}", error);
+                        return;
+                    }
+                }
+                else
+                {
+                    Log.Error("Unknown command type: {CommandType}", command.Type);
                     return;
                 }
             }
-            else
+
+            // Add the height of the tree as the last line
+            var height = await bPlusTree.HeightAsync();
+            if (height.IsError)
             {
-                Log.Error("Unknown command type: {CommandType}", command.Type);
+                var error = height.GetErrorOrThrow();
+                Log.Error("Error getting height of B+ tree: {ErrorMessage}", error.Message);
                 return;
             }
-        }
 
-        // Add the height of the tree as the last line
-        var height = await bPlusTree.HeightAsync();
-        if (height.IsError)
+            outputContent.AppendLine($"H/{height.GetValueOrThrow()}");
+
+            // Write the output content to file
+            if (outFile != null)
+                try
+                {
+                    await File.WriteAllTextAsync(outFile.FullName, outputContent.ToString());
+                    Log.Information("Output written to file: {OutFile}", outFile.FullName);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error writing to output file: {OutFile}", outFile.FullName);
+                }
+
+            // Flush services
+            await FlushServicesAsync(serviceProvider);
+        }
+        finally
         {
-            var error = height.GetErrorOrThrow();
-            Log.Error("Error getting height of B+ tree: {ErrorMessage}", error.Message);
-            return;
+            // Dispose the service provider
+            await serviceProvider.DisposeAsync();
         }
+    }
 
-        outputContent.AppendLine($"H/{height.GetValueOrThrow()}");
-
-        // Write the output content to file
-        if (outFile != null)
-            try
-            {
-                await File.WriteAllTextAsync(outFile.FullName, outputContent.ToString());
-                Log.Information("Output written to file: {OutFile}", outFile.FullName);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error writing to output file: {OutFile}", outFile.FullName);
-            }
-
+    private static async Task FlushServicesAsync(IServiceProvider serviceProvider)
+    {
+        var bufferManager = serviceProvider.GetRequiredService<IBufferManager>();
         var bufferFlushResult = await bufferManager.FlushAllFramesAsync();
         if (bufferFlushResult.IsError)
         {
@@ -252,6 +271,7 @@ internal static class Program
             Log.Error("Error flushing buffer: {ErrorMessage}", error.Message);
         }
 
+        var fileManager = serviceProvider.GetRequiredService<IFileManager>();
         var heapFlushResult = await fileManager.FlushAsync();
         if (heapFlushResult.IsError)
         {
