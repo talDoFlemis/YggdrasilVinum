@@ -166,6 +166,9 @@ internal static class Program
             return;
         }
 
+        // Create command processor factory and strategies
+        var commandProcessorFactory = new CommandProcessorFactory(database, harvestYearSearchProcessor);
+        var commandProcessors = commandProcessorFactory.CreateCommandProcessors();
 
         Log.Debug("Processing commands from file: {CommandsFile}", commandsFile.FullName);
         var commandsResult = CommandParser.ParseCommandFile(commandsFile.FullName);
@@ -193,7 +196,7 @@ internal static class Program
         // Write the header line
         outputContent.AppendLine($"FLH/{header.MaxChildren}");
 
-        // Process each command
+        // Process each command using Strategy pattern
         foreach (var command in commands)
         {
             Log.Information(
@@ -201,11 +204,20 @@ internal static class Program
                 command.Type,
                 command.Key
             );
-            var commandResult = await ProcessCommandAsync(command, database, harvestYearSearchProcessor, outputContent);
-            if (commandResult.IsError)
+
+            if (commandProcessors.TryGetValue(command.Type, out var processor))
             {
-                var error = commandResult.GetErrorOrThrow();
-                Log.Error("Error processing command: {ErrorMessage}", error);
+                var commandResult = await processor.ExecuteAsync(command, outputContent);
+                if (commandResult.IsError)
+                {
+                    var error = commandResult.GetErrorOrThrow();
+                    Log.Error("Error processing command: {ErrorMessage}", error);
+                    return;
+                }
+            }
+            else
+            {
+                Log.Error("Unknown command type: {CommandType}", command.Type);
                 return;
             }
         }
@@ -246,71 +258,5 @@ internal static class Program
             var error = heapFlushResult.GetErrorOrThrow();
             Log.Error("Error flushing heap: {ErrorMessage}", error.Message);
         }
-    }
-
-    private static async Task<Result<Unit, string>> ProcessCommandAsync(
-        CommandParser.Command command,
-        Database database,
-        HarvestYearSearchProcessor harvestYearSearchProcessor,
-        StringBuilder outputContent
-    )
-    {
-        switch (command.Type)
-        {
-            case CommandParser.CommandType.Insert:
-                var winesResult = await harvestYearSearchProcessor.SearchByHarvestYearAsync(command.Key);
-                if (winesResult.IsError)
-                {
-                    var error = winesResult.GetErrorOrThrow();
-                    Log.Error("Error searching for wine with harvest year {HarvestYear}: {ErrorMessage}", command.Key,
-                        error.Message);
-                    return Result<Unit, string>.Error(error.Message);
-                }
-
-                var wines = winesResult.GetValueOrThrow();
-
-                foreach (var wine in wines)
-                {
-                    var insertResult = await database.InsertAsync(wine);
-                    if (insertResult.IsError)
-                    {
-                        var error = insertResult.GetErrorOrThrow();
-                        Log.Error("Error inserting wine with ID {WineId}: {ErrorMessage}", wine.WineId, error.Message);
-                        return Result<Unit, string>.Error(error.Message);
-                    }
-
-                    Log.Debug("Inserted wine with ID {WineId}", wine.WineId);
-                }
-
-                outputContent.AppendLine($"INC:{command.Key}/{wines.Length}");
-
-                Log.Information("Inserted {WineCount} wines with harvest year {HarvestYear}", wines.Length,
-                    command.Key);
-                break;
-
-            case CommandParser.CommandType.Search:
-                var searchResult = await database.SearchAsync(command.Key);
-                if (searchResult.IsError)
-                {
-                    var error = searchResult.GetErrorOrThrow();
-                    Log.Error("Error searching for wine with ID {WineId}: {ErrorMessage}", command.Key, error.Message);
-                    return Result<Unit, string>.Error(error.Message);
-                }
-
-                var winesFound = searchResult.GetValueOrThrow();
-
-                // Write the search result to the output content
-                outputContent.AppendLine($"BUS=:{command.Key}/{winesFound.Length}");
-
-                foreach (var wine in winesFound)
-                    Log.Debug("Wine ID: {WineId}, Name: {WineName}", wine.WineId, wine.Label);
-
-                Log.Information("Found {WineCount} wines with harvest year {HarvestYear}", winesFound.Length,
-                    command.Key);
-
-                break;
-        }
-
-        return Result<Unit, string>.Success(new Unit());
     }
 }
