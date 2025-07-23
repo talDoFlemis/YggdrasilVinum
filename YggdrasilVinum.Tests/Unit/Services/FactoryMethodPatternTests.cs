@@ -6,6 +6,10 @@ using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Examples;
+using YggdrasilVinum.Services.Factories;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum.Tests.Unit.Services;

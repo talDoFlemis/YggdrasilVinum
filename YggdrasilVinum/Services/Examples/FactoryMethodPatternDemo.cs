@@ -2,8 +2,10 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Factories;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Examples;
 
 /// <summary>
 ///     Concrete implementation of the Factory Method pattern for command processors

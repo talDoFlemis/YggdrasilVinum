@@ -2,7 +2,7 @@ using System.Text;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.CommandProcessing;
 
 /// <summary>
 ///     Interface for command processing strategies

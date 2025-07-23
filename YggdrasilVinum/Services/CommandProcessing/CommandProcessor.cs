@@ -3,7 +3,7 @@ using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.CommandProcessing;
 
 /// <summary>
 ///     Handles processing of commands for the B+ tree database
@@ -21,7 +21,6 @@ public class CommandProcessor
     ///     Processes a single command
     /// </summary>
     public async Task<Result<Unit, BPlusTreeError>> ProcessCommandAsync(CommandParser.Command command,
-        // TODO: fix this type
         IBPlusTreeIndex<int, int> bPlusTree,
         List<WineRecord> wines)
     {
@@ -69,11 +68,8 @@ public class CommandProcessor
                         // Page ID now represents a reference to where the wine is stored
                         var wineId = pageId; // For simplicity, assuming pageId correlates to wineId
                         var wine = wines.FirstOrDefault(w => w.WineId == wineId);
-                        if (wine != null)
-                            _logger.Debug("Found wine: {WineId}, {Label}, {HarvestYear}, {Type}",
-                                wine.WineId, wine.Label, wine.HarvestYear, wine.Type);
-                        else
-                            _logger.Warning("Found pageId {PageId} but no matching wine", pageId);
+                        _logger.Debug("Found wine: {WineId}, {Label}, {HarvestYear}, {Type}",
+                            wine.WineId, wine.Label, wine.HarvestYear, wine.Type);
                     }
                 }
                 else

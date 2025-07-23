@@ -4,9 +4,12 @@ using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Facades;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Factories;
 
 /// <summary>
 ///     Factory class that creates application components and configures the application

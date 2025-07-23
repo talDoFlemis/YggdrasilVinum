@@ -2,7 +2,8 @@ using FluentAssertions;
 using Moq;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Facades;
 using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum.Tests.Unit.Services;

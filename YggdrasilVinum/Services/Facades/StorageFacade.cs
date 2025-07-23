@@ -3,7 +3,7 @@ using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Storage;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Facades;
 
 /// <summary>
 ///     Facade pattern implementation that provides a unified interface for storage operations.

@@ -8,7 +8,7 @@ public static class FacadePatternExample
     /// <summary>
     ///     Demonstrates the problem solved by the Facade pattern
     /// </summary>
-    public static void DemonstrateProblemWithoutFacade()
+    private static void DemonstrateProblemWithoutFacade()
     {
         Console.WriteLine("=== Problem Without Facade Pattern ===\n");
 
@@ -40,7 +40,7 @@ public static class FacadePatternExample
     /// <summary>
     ///     Demonstrates the solution with the Facade pattern
     /// </summary>
-    public static void DemonstrateSolutionWithFacade()
+    private static void DemonstrateSolutionWithFacade()
     {
         Console.WriteLine("\n=== Solution With Facade Pattern ===\n");
 
@@ -93,7 +93,7 @@ public static class FacadePatternExample
     /// <summary>
     ///     Demonstrates the facade pattern benefits through metrics
     /// </summary>
-    public static void DemonstrateMetricsComparison()
+    private static void DemonstrateMetricsComparison()
     {
         Console.WriteLine("\n=== Metrics Comparison ===\n");
 
@@ -122,7 +122,7 @@ public static class FacadePatternExample
     /// <summary>
     ///     Demonstrates when to apply the Facade pattern
     /// </summary>
-    public static void DemonstrateWhenToApplyFacade()
+    private static void DemonstrateWhenToApplyFacade()
     {
         Console.WriteLine("\n=== When to Apply Facade Pattern ===\n");
 
@@ -153,7 +153,7 @@ public static class FacadePatternExample
     /// <summary>
     ///     Demonstrates how to extend the facade pattern
     /// </summary>
-    public static void DemonstrateExtendingFacade()
+    private static void DemonstrateExtendingFacade()
     {
         Console.WriteLine("\n=== Extending the Facade Pattern ===\n");
 

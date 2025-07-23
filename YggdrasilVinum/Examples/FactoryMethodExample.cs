@@ -144,12 +144,9 @@ public static class FactoryMethodExample
     }
 }
 
-/// <summary>
-///     Console application entry point for demonstration
-/// </summary>
-public static class Program
+public static class PatternExamples
 {
-    public static void Main(string[] args)
+    public static void Execute()
     {
         try
         {
@@ -157,6 +154,8 @@ public static class Program
             FactoryMethodExample.DemonstrateFactoryMethodConcept();
             FactoryMethodExample.DemonstrateExtensibility();
             FactoryMethodExample.DemonstrateFacadePattern();
+
+            FacadePatternExample.RunCompleteDemo();
         }
         catch (Exception ex)
         {

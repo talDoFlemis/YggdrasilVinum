@@ -4,7 +4,7 @@ using Serilog;
 using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.Processing;
 
 namespace YggdrasilVinum.Tests.Unit.Services;
 
@@ -156,7 +156,7 @@ public class EqualitySearchProcessorTests
         // RIDs pointing to specific records in different pages
         var rids = new List<RID>
         {
-            new(1, 0), // First record in page 1 
+            new(1, 0), // First record in page 1
             new(2, 1), // Second record in page 2
             new(3, 0) // First record in page 3
         };

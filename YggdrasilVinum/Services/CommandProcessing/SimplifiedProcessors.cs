@@ -1,7 +1,9 @@
 using Serilog;
 using YggdrasilVinum.Models;
+using YggdrasilVinum.Services.Facades;
+using YggdrasilVinum.Services.Processing;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.CommandProcessing;
 
 /// <summary>
 ///     Simplified insert processor that uses StorageFacade.

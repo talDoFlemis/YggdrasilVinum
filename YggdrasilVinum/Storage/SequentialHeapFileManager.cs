@@ -12,8 +12,8 @@ public sealed class SequentialHeapFileManager(
     ulong pageSizeInBytes = 4096)
     : IFileManager, IDisposable, IAsyncDisposable
 {
-    private static readonly string _metadataFile = "heap_metadata.ygg";
-    private static readonly string _heapFile = "heap.ygg";
+    private const string _metadataFile = "heap_metadata.ygg";
+    private const string _heapFile = "heap.ygg";
     private readonly ILogger _logger = Log.ForContext<SequentialHeapFileManager>();
     private FileStream? _fileStream;
     private HeapFileMetadata _heapFileMetadata = new();

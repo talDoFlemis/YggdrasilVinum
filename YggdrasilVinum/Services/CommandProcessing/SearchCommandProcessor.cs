@@ -3,7 +3,7 @@ using Serilog;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.CommandProcessing;
 
 /// <summary>
 ///     Command processor strategy for search operations

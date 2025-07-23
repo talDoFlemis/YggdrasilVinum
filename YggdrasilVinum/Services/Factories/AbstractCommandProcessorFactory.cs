@@ -1,6 +1,7 @@
 using YggdrasilVinum.Parsers;
+using YggdrasilVinum.Services.CommandProcessing;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Factories;
 
 /// <summary>
 ///     Abstract factory for creating command processors using the Factory Method pattern

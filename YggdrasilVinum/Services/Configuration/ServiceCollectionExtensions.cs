@@ -2,9 +2,13 @@ using Microsoft.Extensions.DependencyInjection;
 using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Examples;
+using YggdrasilVinum.Services.Factories;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Configuration;
 
 /// <summary>
 ///     Extension methods for configuring dependency injection
@@ -22,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(configuration);
 
         // Configure core storage services
-        services.AddSingleton<IFileManager>(provider =>
+        services.AddSingleton<IFileManager>(_ =>
             new SequentialHeapFileManager(configuration.StoragePath, configuration.HeapSizeInBytes,
                 configuration.PageSizeInBytes));
 
@@ -34,7 +38,7 @@ public static class ServiceCollectionExtensions
         });
 
         // Configure B+ Tree index
-        services.AddSingleton<IBPlusTreeIndex<int, RID>>(provider =>
+        services.AddSingleton<IBPlusTreeIndex<int, RID>>(_ =>
             new BPlusTreeIndex<int, RID>(configuration.IndexPath, configuration.MaxNumberOfKeysPerNode));
 
         // Configure processors
@@ -54,7 +58,7 @@ public static class ServiceCollectionExtensions
         });
 
         // Configure wine processor
-        services.AddSingleton<IWineProcessor>(provider =>
+        services.AddSingleton<IWineProcessor>(_ =>
             new WineProcessor(configuration.ProcessedWinesPath));
 
         services.AddSingleton<HarvestYearSearchProcessor>(provider =>

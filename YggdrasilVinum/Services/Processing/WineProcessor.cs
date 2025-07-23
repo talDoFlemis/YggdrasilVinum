@@ -4,7 +4,7 @@ using Serilog;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Processing;
 
 /// <summary>
 ///     Processes wine CSV data into a fixed-size binary format sorted by harvest year
@@ -78,27 +78,27 @@ public class WineProcessor : IWineProcessor
     /// <summary>
     ///     Opens an existing processed file for binary search operations.
     /// </summary>
-    public async Task<Result<Unit, WineProcessorError>> OpenProcessedFileAsync()
+    public Task<Result<Unit, WineProcessorError>> OpenProcessedFileAsync()
     {
         _logger.Debug("Opening processed wine file {ProcessedFilePath}", _processedFilePath);
 
         try
         {
             if (!File.Exists(_processedFilePath))
-                return Result<Unit, WineProcessorError>.Error(
-                    new WineProcessorError($"Processed file not found: {_processedFilePath}"));
+                return Task.FromResult(Result<Unit, WineProcessorError>.Error(
+                    new WineProcessorError($"Processed file not found: {_processedFilePath}")));
 
             _processedFileStream = new FileStream(_processedFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             RecordCount = _processedFileStream.Length / RECORD_SIZE;
 
             _logger.Information("Opened processed file with {RecordCount} records", RecordCount);
-            return Result<Unit, WineProcessorError>.Success(Unit.Value);
+            return Task.FromResult(Result<Unit, WineProcessorError>.Success(Unit.Value));
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Error opening processed file");
-            return Result<Unit, WineProcessorError>.Error(
-                new WineProcessorError($"Failed to open processed file: {ex.Message}"));
+            return Task.FromResult(Result<Unit, WineProcessorError>.Error(
+                new WineProcessorError($"Failed to open processed file: {ex.Message}")));
         }
     }
 
@@ -178,7 +178,7 @@ public class WineProcessor : IWineProcessor
 
         public void Dispose()
         {
-            _stream?.Dispose();
+            _stream.Dispose();
         }
 
         public async Task<WineRecord?> ReadNextRecordAsync()

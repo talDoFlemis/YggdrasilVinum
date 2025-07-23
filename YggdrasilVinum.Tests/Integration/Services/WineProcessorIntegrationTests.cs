@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Serilog;
 using YggdrasilVinum.Models;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.Processing;
 
 namespace YggdrasilVinum.Tests.Integration.Services;
 

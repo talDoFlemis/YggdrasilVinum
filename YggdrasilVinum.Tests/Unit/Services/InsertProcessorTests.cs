@@ -4,7 +4,7 @@ using Serilog;
 using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum.Tests.Unit.Services;

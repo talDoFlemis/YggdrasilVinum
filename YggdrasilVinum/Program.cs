@@ -4,10 +4,13 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using YggdrasilVinum.Buffer;
+using YggdrasilVinum.Examples;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.Configuration;
+using YggdrasilVinum.Services.Factories;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum;
@@ -78,7 +81,7 @@ internal static class Program
                 "--commands-file",
                 "Path to the file containing commands, or omit to use stdin"
             ) { Arity = ArgumentArity.ZeroOrOne };
-            commandsArgument.SetDefaultValue("in.txt");
+            commandsArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/in.txt"));
             rootCommand.AddOption(commandsArgument);
 
             // Argument for out file
@@ -86,9 +89,15 @@ internal static class Program
                 "--out-file",
                 "Path to the output file for results"
             ) { Arity = ArgumentArity.ZeroOrOne };
-            outFileArgument.SetDefaultValue(new FileInfo("out.txt"));
+            outFileArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/out.txt"));
             rootCommand.AddOption(outFileArgument);
 
+            var examplesArgument = new Option<bool>(
+                "--examples",
+                "Show examples of how to use the application"
+            ) { Arity = ArgumentArity.ZeroOrOne };
+            examplesArgument.SetDefaultValue(false);
+            rootCommand.AddOption(examplesArgument);
 
             rootCommand.SetHandler(async context =>
             {
@@ -100,6 +109,7 @@ internal static class Program
                 var indexFrames = (ulong)context.ParseResult.GetValueForOption(indexFramesArgument);
                 var commandsFile = context.ParseResult.GetValueForOption(commandsArgument);
                 var outFile = context.ParseResult.GetValueForOption(outFileArgument);
+                var showExamples = context.ParseResult.GetValueForOption(examplesArgument);
 
                 // Create application configuration
                 var configuration = new ApplicationConfiguration
@@ -113,6 +123,14 @@ internal static class Program
                     MaxNumberOfKeysPerNode = (int)maxKeys,
                     ProcessedWinesPath = "./storage/processed_wines.txt"
                 };
+
+                if (showExamples)
+                {
+                    PatternExamples.Execute();
+                    return;
+                }
+
+                ;
 
                 await RunApplication(wineData, commandsFile, outFile, configuration);
             });
@@ -136,6 +154,8 @@ internal static class Program
         FileInfo? outFile,
         ApplicationConfiguration configuration)
     {
+        if (Directory.Exists(configuration.StoragePath)) Directory.Delete(configuration.StoragePath, true);
+
         // Configure dependency injection
         var services = new ServiceCollection();
         services.ConfigureApplicationServices(configuration);

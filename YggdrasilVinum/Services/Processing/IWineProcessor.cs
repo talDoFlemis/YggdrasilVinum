@@ -1,6 +1,6 @@
 using YggdrasilVinum.Models;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Processing;
 
 /// <summary>
 ///     Interface for wine processing operations including binary search by harvest year.

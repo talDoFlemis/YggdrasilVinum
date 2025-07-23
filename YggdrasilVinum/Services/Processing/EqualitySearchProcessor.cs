@@ -3,7 +3,7 @@ using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Processing;
 
 public class EqualitySearchProcessor(
     IBufferManager bufferManager,
