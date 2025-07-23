@@ -1,17 +1,14 @@
-using System.Text;
-using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
-using YggdrasilVinum.Services;
 
 namespace YggdrasilVinum.Examples;
 
 /// <summary>
-/// Example demonstrating the Factory Method pattern usage
+///     Example demonstrating the Factory Method pattern usage
 /// </summary>
 public static class FactoryMethodExample
 {
     /// <summary>
-    /// Demonstrates how to use different factory implementations
+    ///     Demonstrates how to use different factory implementations
     /// </summary>
     public static void DemonstrateFactoryMethodPattern()
     {
@@ -30,9 +27,7 @@ public static class FactoryMethodExample
 
         Console.WriteLine("\n3. Supported Command Types:");
         foreach (var commandType in Enum.GetValues<CommandParser.CommandType>())
-        {
             Console.WriteLine($"   - {commandType}");
-        }
 
         Console.WriteLine("\n4. Factory Method Implementation:");
         Console.WriteLine("   Each factory implements CreateProcessor(CommandType type)");
@@ -41,7 +36,7 @@ public static class FactoryMethodExample
     }
 
     /// <summary>
-    /// Demonstrates the factory method pattern concept without actual execution
+    ///     Demonstrates the factory method pattern concept without actual execution
     /// </summary>
     public static void DemonstrateFactoryMethodConcept()
     {
@@ -72,7 +67,7 @@ public static class FactoryMethodExample
     }
 
     /// <summary>
-    /// Demonstrates how to extend the factory pattern
+    ///     Demonstrates how to extend the factory pattern
     /// </summary>
     public static void DemonstrateExtensibility()
     {
@@ -91,10 +86,66 @@ public static class FactoryMethodExample
         Console.WriteLine("3. Handle object creation based on your requirements");
         Console.WriteLine("   (e.g., configuration-based, caching, etc.)");
     }
+
+    /// <summary>
+    ///     Demonstrates the Facade pattern implementation for storage operations
+    /// </summary>
+    public static void DemonstrateFacadePattern()
+    {
+        Console.WriteLine("\n=== Facade Pattern Demonstration ===\n");
+
+        Console.WriteLine("4. Padrão Facade");
+        Console.WriteLine("Onde aplicar: Para simplificar a interação com o subsistema de armazenamento.\n");
+
+        Console.WriteLine("Problema atual:");
+        Console.WriteLine("Os processadores de comando (InsertProcessor, EqualitySearchProcessor) precisam");
+        Console.WriteLine("interagir com múltiplos componentes do subsistema de armazenamento:");
+        Console.WriteLine("- IBPlusTreeIndex");
+        Console.WriteLine("- IBufferManager");
+        Console.WriteLine("- IFileManager");
+        Console.WriteLine("Isso aumenta a complexidade e o acoplamento dessas classes de alto nível.\n");
+
+        Console.WriteLine("Solução com Facade:");
+        Console.WriteLine("Crie uma classe StorageFacade que forneça uma interface unificada");
+        Console.WriteLine("e simplificada para as operações comuns de armazenamento.\n");
+
+        Console.WriteLine("Estrutura do Facade:");
+        Console.WriteLine("   StorageFacade");
+        Console.WriteLine("   ├── IBPlusTreeIndex _index");
+        Console.WriteLine("   ├── IFileManager _heapFile");
+        Console.WriteLine("   ├── InsertWineRecordAsync(WineRecord record)");
+        Console.WriteLine("   └── FindRecordsByYearAsync(int year)");
+
+        Console.WriteLine("\nBenefícios do Facade:");
+        Console.WriteLine("✓ Simplificação: Processadores dependem apenas da StorageFacade");
+        Console.WriteLine("✓ Desacoplamento: Isola o código cliente das complexidades internas");
+        Console.WriteLine("✓ Manutenibilidade: Mudanças no subsistema não afetam os clientes");
+        Console.WriteLine("✓ Testabilidade: Facilita mock/stub do subsistema de armazenamento");
+
+        Console.WriteLine("\nComparação de Dependências:");
+        Console.WriteLine("Antes (InsertProcessor):");
+        Console.WriteLine("   - IBufferManager bufferManager");
+        Console.WriteLine("   - IFileManager fileManager");
+        Console.WriteLine("   - IBPlusTreeIndex<int, RID> bPlusTree");
+        Console.WriteLine("   Total: 3 dependências diretas");
+
+        Console.WriteLine("\nDepois (SimplifiedInsertProcessor):");
+        Console.WriteLine("   - StorageFacade storageFacade");
+        Console.WriteLine("   Total: 1 dependência");
+
+        Console.WriteLine("\nOperações Simplificadas:");
+        Console.WriteLine("Inserção:");
+        Console.WriteLine("   Antes: ~70 linhas coordenando múltiplos componentes");
+        Console.WriteLine("   Depois: ~15 linhas usando facade.InsertWineRecordAsync()");
+
+        Console.WriteLine("\nBusca:");
+        Console.WriteLine("   Antes: ~50 linhas coordenando busca no índice + buffer manager");
+        Console.WriteLine("   Depois: ~10 linhas usando facade.FindRecordsByYearAsync()");
+    }
 }
 
 /// <summary>
-/// Console application entry point for demonstration
+///     Console application entry point for demonstration
 /// </summary>
 public static class Program
 {
@@ -105,6 +156,7 @@ public static class Program
             FactoryMethodExample.DemonstrateFactoryMethodPattern();
             FactoryMethodExample.DemonstrateFactoryMethodConcept();
             FactoryMethodExample.DemonstrateExtensibility();
+            FactoryMethodExample.DemonstrateFacadePattern();
         }
         catch (Exception ex)
         {

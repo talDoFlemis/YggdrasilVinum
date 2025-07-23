@@ -1,7 +1,7 @@
 namespace YggdrasilVinum.Services;
 
 /// <summary>
-/// Configuration class for application services
+///     Configuration class for application services
 /// </summary>
 public class ApplicationConfiguration
 {

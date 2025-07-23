@@ -6,7 +6,7 @@ using YggdrasilVinum.Parsers;
 namespace YggdrasilVinum.Services;
 
 /// <summary>
-/// Concrete implementation of the Factory Method pattern for command processors
+///     Concrete implementation of the Factory Method pattern for command processors
 /// </summary>
 public class StandardCommandProcessorFactory : AbstractCommandProcessorFactory
 {
@@ -18,7 +18,7 @@ public class StandardCommandProcessorFactory : AbstractCommandProcessorFactory
     }
 
     /// <summary>
-    /// Creates a command processor for the specified command type
+    ///     Creates a command processor for the specified command type
     /// </summary>
     /// <param name="type">The type of command to create a processor for</param>
     /// <returns>An instance of ICommandProcessor appropriate for the command type</returns>
@@ -35,8 +35,8 @@ public class StandardCommandProcessorFactory : AbstractCommandProcessorFactory
 }
 
 /// <summary>
-/// Alternative factory implementation that could be used for different scenarios
-/// (e.g., testing, different environments, etc.)
+///     Alternative factory implementation that could be used for different scenarios
+///     (e.g., testing, different environments, etc.)
 /// </summary>
 public class TestCommandProcessorFactory : AbstractCommandProcessorFactory
 {
@@ -49,7 +49,7 @@ public class TestCommandProcessorFactory : AbstractCommandProcessorFactory
     {
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _harvestYearSearchProcessor = harvestYearSearchProcessor ??
-                                     throw new ArgumentNullException(nameof(harvestYearSearchProcessor));
+                                      throw new ArgumentNullException(nameof(harvestYearSearchProcessor));
     }
 
     public override ICommandProcessor CreateProcessor(CommandParser.CommandType type)
@@ -64,12 +64,12 @@ public class TestCommandProcessorFactory : AbstractCommandProcessorFactory
 }
 
 /// <summary>
-/// Factory Method Pattern demonstration and usage example
+///     Factory Method Pattern demonstration and usage example
 /// </summary>
 public static class FactoryMethodPatternDemo
 {
     /// <summary>
-    /// Demonstrates how to use the Factory Method pattern for command processing
+    ///     Demonstrates how to use the Factory Method pattern for command processing
     /// </summary>
     /// <param name="factory">The factory to use for creating processors</param>
     /// <param name="command">The command to process</param>
@@ -94,7 +94,7 @@ public static class FactoryMethodPatternDemo
     }
 
     /// <summary>
-    /// Example of processing multiple commands using the factory pattern
+    ///     Example of processing multiple commands using the factory pattern
     /// </summary>
     /// <param name="factory">The factory to use for creating processors</param>
     /// <param name="commands">List of commands to process</param>
@@ -108,10 +108,7 @@ public static class FactoryMethodPatternDemo
         foreach (var command in commands)
         {
             var result = await ProcessCommandUsingFactory(factory, command, outputContent);
-            if (result.IsError)
-            {
-                return result;
-            }
+            if (result.IsError) return result;
         }
 
         return Result<Unit, CommandProcessorError>.Success(new Unit());

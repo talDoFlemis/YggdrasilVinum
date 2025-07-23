@@ -2,11 +2,13 @@
 
 ## Overview
 
-This project implements the Factory Method pattern to provide a flexible way to create command processors. The pattern allows for the creation of objects without specifying their exact class, promoting loose coupling and extensibility.
+This project implements the Factory Method pattern to provide a flexible way to create command processors. The pattern
+allows for the creation of objects without specifying their exact class, promoting loose coupling and extensibility.
 
 ## Pattern Structure
 
 ### Abstract Factory
+
 ```csharp
 public abstract class AbstractCommandProcessorFactory
 {
@@ -17,7 +19,9 @@ public abstract class AbstractCommandProcessorFactory
 ### Concrete Implementations
 
 #### StandardCommandProcessorFactory
+
 Uses dependency injection to create command processors:
+
 ```csharp
 public class StandardCommandProcessorFactory : AbstractCommandProcessorFactory
 {
@@ -41,7 +45,9 @@ public class StandardCommandProcessorFactory : AbstractCommandProcessorFactory
 ```
 
 #### TestCommandProcessorFactory
+
 Creates command processors directly for testing scenarios:
+
 ```csharp
 public class TestCommandProcessorFactory : AbstractCommandProcessorFactory
 {
@@ -69,20 +75,25 @@ public class TestCommandProcessorFactory : AbstractCommandProcessorFactory
 ## Benefits
 
 ### 1. Encapsulation
+
 The factory encapsulates the complex object creation logic, hiding dependencies from client code.
 
 ### 2. Flexibility
+
 Easy to introduce new types of command processors without modifying existing client code.
 
 ### 3. Testability
+
 Different factory implementations can be used for testing vs. production scenarios.
 
 ### 4. Dependency Management
+
 The StandardCommandProcessorFactory integrates seamlessly with the dependency injection container.
 
 ## Usage Examples
 
 ### Basic Usage
+
 ```csharp
 // Using dependency injection
 var serviceProvider = // ... configure services
@@ -97,6 +108,7 @@ var testProcessor = testFactory.CreateProcessor(CommandParser.CommandType.Search
 ```
 
 ### Processing Commands with Factory
+
 ```csharp
 public static async Task<Result<Unit, CommandProcessorError>> ProcessCommandUsingFactory(
     AbstractCommandProcessorFactory factory,

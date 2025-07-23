@@ -7,12 +7,12 @@ using YggdrasilVinum.Storage;
 namespace YggdrasilVinum.Services;
 
 /// <summary>
-/// Extension methods for configuring dependency injection
+///     Extension methods for configuring dependency injection
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Configures all application services for dependency injection
+    ///     Configures all application services for dependency injection
     /// </summary>
     public static IServiceCollection ConfigureApplicationServices(
         this IServiceCollection services,
@@ -23,12 +23,14 @@ public static class ServiceCollectionExtensions
 
         // Configure core storage services
         services.AddSingleton<IFileManager>(provider =>
-            new SequentialHeapFileManager(configuration.StoragePath, configuration.HeapSizeInBytes, configuration.PageSizeInBytes));
+            new SequentialHeapFileManager(configuration.StoragePath, configuration.HeapSizeInBytes,
+                configuration.PageSizeInBytes));
 
         services.AddSingleton<IBufferManager>(provider =>
         {
             var fileManager = provider.GetRequiredService<IFileManager>();
-            return new LruBufferManager(fileManager, configuration.AmountOfPageFrames, configuration.AmountOfIndexFrames);
+            return new LruBufferManager(fileManager, configuration.AmountOfPageFrames,
+                configuration.AmountOfIndexFrames);
         });
 
         // Configure B+ Tree index
@@ -104,7 +106,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Initializes all services that require async initialization
+    ///     Initializes all services that require async initialization
     /// </summary>
     public static async Task<Result<Unit, string>> InitializeServicesAsync(this IServiceProvider serviceProvider)
     {

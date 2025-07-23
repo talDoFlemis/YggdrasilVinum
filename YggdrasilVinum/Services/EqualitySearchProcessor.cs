@@ -30,7 +30,7 @@ public class EqualitySearchProcessor(
 
         var rids = searchResult.GetValueOrThrow();
 
-        _logger.Information("Found {@size} records with harvest year: {@HarvestYear}", rids.Count, harvestYear);
+        _logger.Information("Found {@Size} records with harvest year: {@HarvestYear}", rids.Count, harvestYear);
 
         List<WineRecord> allWineRecords = [];
         foreach (var rid in rids)
@@ -75,4 +75,9 @@ public class EqualitySearchProcessor(
 public readonly struct SearchError(string message)
 {
     public string Message { get; } = message;
+
+    public override string ToString()
+    {
+        return Message;
+    }
 }

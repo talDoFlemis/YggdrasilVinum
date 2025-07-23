@@ -4,12 +4,12 @@ using YggdrasilVinum.Services;
 namespace YggdrasilVinum;
 
 /// <summary>
-/// Example class showing how DI makes testing easier by allowing dependency substitution
+///     Example class showing how DI makes testing easier by allowing dependency substitution
 /// </summary>
 public static class DependencyInjectionExample
 {
     /// <summary>
-    /// Demonstrates how to configure services for testing with mock dependencies
+    ///     Demonstrates how to configure services for testing with mock dependencies
     /// </summary>
     public static IServiceProvider ConfigureTestServices(ApplicationConfiguration configuration)
     {
@@ -23,11 +23,11 @@ public static class DependencyInjectionExample
         {
             StoragePath = "./test_storage",
             HeapSizeInBytes = 1024 * 1024, // Smaller heap for tests
-            PageSizeInBytes = 512,         // Smaller pages for tests
+            PageSizeInBytes = 512, // Smaller pages for tests
             AmountOfPageFrames = 1,
             AmountOfIndexFrames = 1,
             IndexPath = "./test_storage/test_index.txt",
-            MaxNumberOfKeysPerNode = 2,    // Smaller tree for tests
+            MaxNumberOfKeysPerNode = 2, // Smaller tree for tests
             ProcessedWinesPath = "./test_storage/test_processed_wines.txt"
         };
 
@@ -37,7 +37,7 @@ public static class DependencyInjectionExample
     }
 
     /// <summary>
-    /// Example of how to get a specific service for testing
+    ///     Example of how to get a specific service for testing
     /// </summary>
     public static T GetTestService<T>(IServiceProvider serviceProvider) where T : notnull
     {

@@ -4,7 +4,8 @@
 
 ### 1. Configuração dos Serviços
 
-Foi implementado o padrão de Injeção de Dependência utilizando `Microsoft.Extensions.DependencyInjection`. A configuração foi centralizada na classe `ServiceCollectionExtensions.cs`.
+Foi implementado o padrão de Injeção de Dependência utilizando `Microsoft.Extensions.DependencyInjection`. A
+configuração foi centralizada na classe `ServiceCollectionExtensions.cs`.
 
 #### Principais Componentes Configurados:
 
@@ -32,6 +33,7 @@ public class ApplicationConfiguration
 O método `RunApplication` foi completamente refatorado para usar o container DI:
 
 #### Antes (Acoplamento Alto):
+
 ```csharp
 var fileManager = ApplicationFactory.CreateFileManager(/*...*/);
 var bufferManager = ApplicationFactory.CreateBufferManager(/*...*/);
@@ -40,6 +42,7 @@ var bPlusTree = ApplicationFactory.CreateBPlusTree(/*...*/);
 ```
 
 #### Depois (Baixo Acoplamento):
+
 ```csharp
 var services = new ServiceCollection();
 services.ConfigureApplicationServices(configuration);
@@ -52,18 +55,22 @@ var database = serviceProvider.GetRequiredService<Database>();
 ## Benefícios Obtidos
 
 ### 1. **Desacoplamento**
+
 - As classes não precisam saber como criar suas dependências
 - Mudanças nas dependências não afetam as classes consumidoras
 
 ### 2. **Manutenibilidade**
+
 - Configuração centralizada em um único local
 - Facilita mudanças na arquitetura da aplicação
 
 ### 3. **Testabilidade**
+
 - Fácil substituição de dependências por mocks/stubs em testes
 - Exemplo fornecido em `DependencyInjectionExample.cs`
 
 ### 4. **Gerenciamento de Ciclo de Vida**
+
 - Singleton: Uma instância por toda a aplicação
 - Transient: Nova instância a cada requisição
 - Controle automático de disposição de recursos
@@ -71,6 +78,7 @@ var database = serviceProvider.GetRequiredService<Database>();
 ## Como Usar
 
 ### Configuração Normal:
+
 ```csharp
 var configuration = new ApplicationConfiguration();
 var services = new ServiceCollection();
@@ -79,6 +87,7 @@ var serviceProvider = services.BuildServiceProvider();
 ```
 
 ### Para Testes:
+
 ```csharp
 var testProvider = DependencyInjectionExample.ConfigureTestServices(testConfig);
 var database = DependencyInjectionExample.GetTestService<Database>(testProvider);

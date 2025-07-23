@@ -1,7 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
@@ -12,7 +11,7 @@ using YggdrasilVinum.Storage;
 namespace YggdrasilVinum.Tests.Unit.Services;
 
 /// <summary>
-/// Unit tests for the Factory Method pattern implementation
+///     Unit tests for the Factory Method pattern implementation
 /// </summary>
 public class FactoryMethodPatternTests
 {
@@ -205,4 +204,3 @@ public class FactoryMethodPatternTests
         Assert.NotSame(insertProcessor, searchProcessor);
     }
 }
-
