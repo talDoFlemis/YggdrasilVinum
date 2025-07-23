@@ -90,6 +90,16 @@ public static class ServiceCollectionExtensions
             return new CommandProcessorFactory(database, harvestYearSearchProcessor);
         });
 
+        // Register Factory Method pattern implementations
+        services.AddSingleton<AbstractCommandProcessorFactory, StandardCommandProcessorFactory>();
+
+        services.AddTransient<TestCommandProcessorFactory>(provider =>
+        {
+            var database = provider.GetRequiredService<Database>();
+            var harvestYearSearchProcessor = provider.GetRequiredService<HarvestYearSearchProcessor>();
+            return new TestCommandProcessorFactory(database, harvestYearSearchProcessor);
+        });
+
         return services;
     }
 
