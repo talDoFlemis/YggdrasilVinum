@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using YggdrasilVinum.Parsers;
 using YggdrasilVinum.Services.CommandProcessing;
 
@@ -6,32 +7,14 @@ namespace YggdrasilVinum.Services.Factories;
 /// <summary>
 ///     Factory for creating command processor strategies
 /// </summary>
-public class CommandProcessorFactory
+public class CommandProcessorFactory(IServiceProvider serviceProvider) : AbstractCommandProcessorFactory
 {
-    private readonly Database _database;
-    private readonly HarvestYearSearchProcessor _harvestYearSearchProcessor;
+    private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
-    public CommandProcessorFactory(
-        Database database,
-        HarvestYearSearchProcessor harvestYearSearchProcessor)
+    public override ICommandProcessor CreateProcessor(CommandParser.CommandType type) => type switch
     {
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _harvestYearSearchProcessor = harvestYearSearchProcessor ??
-                                      throw new ArgumentNullException(nameof(harvestYearSearchProcessor));
-    }
-
-    /// <summary>
-    ///     Creates command processors mapped by command type
-    /// </summary>
-    /// <returns>Dictionary of command processors mapped by command type</returns>
-    public Dictionary<CommandParser.CommandType, ICommandProcessor> CreateCommandProcessors()
-    {
-        return new Dictionary<CommandParser.CommandType, ICommandProcessor>
-        {
-            {
-                CommandParser.CommandType.Insert, new InsertCommandProcessor(_database, _harvestYearSearchProcessor)
-            },
-            { CommandParser.CommandType.Search, new SearchCommandProcessor(_database) }
-        };
-    }
+        CommandParser.CommandType.Insert => _serviceProvider.GetRequiredService<InsertCommandProcessor>(),
+        CommandParser.CommandType.Search => _serviceProvider.GetRequiredService<SearchCommandProcessor>(),
+        _ => throw new NotSupportedException($"Command type '{type}' is not supported.")
+    };
 }

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -32,7 +33,8 @@ internal static class Program
             var wineDataArgument = new Option<FileInfo?>(
                 "--wine-data",
                 "Path to the wine data CSV file that will be parsed"
-            ) { Arity = ArgumentArity.ZeroOrOne };
+            )
+            { Arity = ArgumentArity.ZeroOrOne };
             wineDataArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/wines.csv"));
             rootCommand.AddOption(wineDataArgument);
 
@@ -80,7 +82,8 @@ internal static class Program
             var commandsArgument = new Option<FileInfo?>(
                 "--commands-file",
                 "Path to the file containing commands, or omit to use stdin"
-            ) { Arity = ArgumentArity.ZeroOrOne };
+            )
+            { Arity = ArgumentArity.ZeroOrOne };
             commandsArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/in.txt"));
             rootCommand.AddOption(commandsArgument);
 
@@ -88,14 +91,16 @@ internal static class Program
             var outFileArgument = new Option<FileInfo?>(
                 "--out-file",
                 "Path to the output file for results"
-            ) { Arity = ArgumentArity.ZeroOrOne };
+            )
+            { Arity = ArgumentArity.ZeroOrOne };
             outFileArgument.SetDefaultValue(new FileInfo("YggdrasilVinum/Data/out.txt"));
             rootCommand.AddOption(outFileArgument);
 
             var examplesArgument = new Option<bool>(
                 "--examples",
                 "Show examples of how to use the application"
-            ) { Arity = ArgumentArity.ZeroOrOne };
+            )
+            { Arity = ArgumentArity.ZeroOrOne };
             examplesArgument.SetDefaultValue(false);
             rootCommand.AddOption(examplesArgument);
 
@@ -191,8 +196,7 @@ internal static class Program
             }
 
             // Create command processor factory and strategies
-            var commandProcessorFactory = serviceProvider.GetRequiredService<CommandProcessorFactory>();
-            var commandProcessors = commandProcessorFactory.CreateCommandProcessors();
+            var commandProcessorFactory = serviceProvider.GetRequiredService<AbstractCommandProcessorFactory>();
 
             Debug.Assert(commandsFile != null, nameof(commandsFile) + " != null");
 
@@ -231,8 +235,10 @@ internal static class Program
                     command.Key
                 );
 
-                if (commandProcessors.TryGetValue(command.Type, out var processor))
+                try
                 {
+                    var processor = commandProcessorFactory.CreateProcessor(command.Type);
+
                     var commandResult = await processor.ExecuteAsync(command, outputContent);
                     if (commandResult.IsError)
                     {
@@ -241,11 +247,12 @@ internal static class Program
                         return;
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Log.Error("Unknown command type: {CommandType}", command.Type);
+                    Log.Error(ex,"Exception processing command: {CommandType}",command.Type);
                     return;
                 }
+
             }
 
             // Add the height of the tree as the last line

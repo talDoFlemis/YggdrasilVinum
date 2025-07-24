@@ -42,7 +42,7 @@ public static class ServiceCollectionExtensions
             new BPlusTreeIndex<int, RID>(configuration.IndexPath, configuration.MaxNumberOfKeysPerNode));
 
         // Configure processors
-        services.AddSingleton<InsertProcessor>(provider =>
+        services.AddSingleton(provider =>
         {
             var bufferManager = provider.GetRequiredService<IBufferManager>();
             var fileManager = provider.GetRequiredService<IFileManager>();
@@ -50,7 +50,7 @@ public static class ServiceCollectionExtensions
             return new InsertProcessor(bufferManager, fileManager, bPlusTree);
         });
 
-        services.AddSingleton<EqualitySearchProcessor>(provider =>
+        services.AddSingleton(provider =>
         {
             var bufferManager = provider.GetRequiredService<IBufferManager>();
             var bPlusTree = provider.GetRequiredService<IBPlusTreeIndex<int, RID>>();
@@ -61,14 +61,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWineProcessor>(_ =>
             new WineProcessor(configuration.ProcessedWinesPath));
 
-        services.AddSingleton<HarvestYearSearchProcessor>(provider =>
+        services.AddSingleton(provider =>
         {
             var wineProcessor = provider.GetRequiredService<IWineProcessor>();
             return new HarvestYearSearchProcessor(wineProcessor);
         });
 
         // Configure database
-        services.AddSingleton<Database>(provider =>
+        services.AddSingleton(provider =>
         {
             var insertProcessor = provider.GetRequiredService<InsertProcessor>();
             var equalityProcessor = provider.GetRequiredService<EqualitySearchProcessor>();
@@ -76,35 +76,26 @@ public static class ServiceCollectionExtensions
         });
 
         // Configure command processors
-        services.AddTransient<InsertCommandProcessor>(provider =>
+        services.AddTransient(provider =>
         {
             var database = provider.GetRequiredService<Database>();
             var harvestYearSearchProcessor = provider.GetRequiredService<HarvestYearSearchProcessor>();
             return new InsertCommandProcessor(database, harvestYearSearchProcessor);
         });
 
-        services.AddTransient<SearchCommandProcessor>(provider =>
+        services.AddTransient(provider =>
         {
             var database = provider.GetRequiredService<Database>();
             return new SearchCommandProcessor(database);
         });
 
-        services.AddSingleton<CommandProcessorFactory>(provider =>
+        services.AddSingleton<AbstractCommandProcessorFactory>(provider =>
         {
-            var database = provider.GetRequiredService<Database>();
-            var harvestYearSearchProcessor = provider.GetRequiredService<HarvestYearSearchProcessor>();
-            return new CommandProcessorFactory(database, harvestYearSearchProcessor);
+            return new CommandProcessorFactory(provider);
         });
 
         // Register Factory Method pattern implementations
         services.AddSingleton<AbstractCommandProcessorFactory, StandardCommandProcessorFactory>();
-
-        services.AddTransient<TestCommandProcessorFactory>(provider =>
-        {
-            var database = provider.GetRequiredService<Database>();
-            var harvestYearSearchProcessor = provider.GetRequiredService<HarvestYearSearchProcessor>();
-            return new TestCommandProcessorFactory(database, harvestYearSearchProcessor);
-        });
 
         return services;
     }
@@ -143,7 +134,7 @@ public static class ServiceCollectionExtensions
                 return Result<Unit, string>.Error($"Failed to initialize B+ tree: {error.Message}");
             }
 
-            return Result<Unit, string>.Success(new Unit());
+            return Result<Unit, string>.Success(Unit.Value);
         }
         catch (Exception ex)
         {
