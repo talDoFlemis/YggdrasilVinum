@@ -32,6 +32,12 @@ public struct RID(ulong pageId, uint pageCount) : IParsable<RID>
     {
         try
         {
+            if (string.IsNullOrEmpty(s))
+            {
+                result = default;
+                return false;
+            }
+
             result = Parse(s, null);
             return true;
         }

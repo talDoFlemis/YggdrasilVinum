@@ -49,7 +49,7 @@ public static class CommandParser
         string content)
     {
         Log.Information("Parsing commands from string input");
-        Log.Debug("Command string length: {Length} characters", content?.Length ?? 0);
+        Log.Debug("Command string length: {Length} characters", content.Length);
 
         if (string.IsNullOrEmpty(content))
         {
@@ -91,7 +91,7 @@ public static class CommandParser
             var commandFileHeader = headerResult.GetValueOrThrow();
             Log.Debug("Header parsed successfully, MaxChildren: {MaxChildren}", commandFileHeader.MaxChildren);
             var commands = new List<Command>(32); // Pre-allocate with reasonable initial capacity
-            string line;
+            string? line;
             var lineNumber = 1;
 
             // Process commands line by line
@@ -159,7 +159,7 @@ public static class CommandParser
         }
     }
 
-    private static Result<Command, ParseError> ParseCommand(string line, int lineNumber)
+    private static Result<Command, ParseError> ParseCommand(string? line, int lineNumber)
     {
         if (string.IsNullOrEmpty(line))
         {

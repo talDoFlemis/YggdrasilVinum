@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
@@ -18,8 +19,10 @@ public class WineDataParserTests
         // Act - Use reflection to access private method
         var method = typeof(WineDataParser).GetMethod("ParseCsvLine",
             BindingFlags.NonPublic | BindingFlags.Static);
+        Debug.Assert(method != null, nameof(method) + " != null");
         var result =
-            (Result<WineRecord, WineDataParser.ParseError>)method.Invoke(null, new object[] { validLine, lineNumber });
+            (Result<WineRecord, WineDataParser.ParseError>)(
+                method.Invoke(null, new object[] { validLine, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -99,9 +102,10 @@ public class WineDataParserTests
         // Act - Use reflection to access private method
         var method = typeof(WineDataParser).GetMethod("ParseCsvLine",
             BindingFlags.NonPublic | BindingFlags.Static);
+        Debug.Assert(method != null, nameof(method) + " != null");
         var result =
-            (Result<WineRecord, WineDataParser.ParseError>)method.Invoke(null,
-                new object[] { invalidLine, lineNumber });
+            (Result<WineRecord, WineDataParser.ParseError>)(method.Invoke(null,
+                new object[] { invalidLine, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsError);
@@ -126,8 +130,10 @@ public class WineDataParserTests
         // Act - Use reflection to access private method
         var method = typeof(WineDataParser).GetMethod("ParseWineType",
             BindingFlags.NonPublic | BindingFlags.Static);
+        Debug.Assert(method != null, nameof(method) + " != null");
         var result =
-            (Result<WineType, WineDataParser.ParseError>)method.Invoke(null, new object[] { typeString, lineNumber });
+            (Result<WineType, WineDataParser.ParseError>)(
+                method.Invoke(null, new object[] { typeString, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -144,8 +150,10 @@ public class WineDataParserTests
         // Act - Use reflection to access private method
         var method = typeof(WineDataParser).GetMethod("ParseWineType",
             BindingFlags.NonPublic | BindingFlags.Static);
+        Debug.Assert(method != null, nameof(method) + " != null");
         var result =
-            (Result<WineType, WineDataParser.ParseError>)method.Invoke(null, new object[] { invalidType, lineNumber });
+            (Result<WineType, WineDataParser.ParseError>)(
+                method.Invoke(null, new object[] { invalidType, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsError);
@@ -463,7 +471,7 @@ public class WineDataParserTests
         // This test documents the current behavior with complex CSV formats
         // The current parser doesn't handle these complex formats properly,
         // so we're just verifying what it currently does
-        var result = WineDataParser.ParseCsvString(csvContent);
+        _ = WineDataParser.ParseCsvString(csvContent);
 
         // We don't assert specific behavior since the current parser has limited CSV capabilities.
         // This test is to document the existing behavior with complex formats.

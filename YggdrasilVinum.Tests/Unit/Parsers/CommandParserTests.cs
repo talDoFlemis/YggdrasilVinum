@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
@@ -16,8 +17,11 @@ public class CommandParserTests
         // Act - Use reflection to access private method
         var method = typeof(CommandParser).GetMethod("ParseCommand",
             BindingFlags.NonPublic | BindingFlags.Static);
-        var result = (Result<CommandParser.Command, CommandParser.ParseError>)method.Invoke(
-            null, new object[] { validLine, lineNumber });
+
+        Assert.NotNull(method); // Ensure the method is found
+
+        var result = (Result<CommandParser.Command, CommandParser.ParseError>)(method.Invoke(
+            null, new object[] { validLine, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -36,8 +40,9 @@ public class CommandParserTests
         // Act - Use reflection to access private method
         var method = typeof(CommandParser).GetMethod("ParseCommand",
             BindingFlags.NonPublic | BindingFlags.Static);
-        var result = (Result<CommandParser.Command, CommandParser.ParseError>)method.Invoke(
-            null, new object[] { validLine, lineNumber });
+        Debug.Assert(method != null, nameof(method) + " != null");
+        var result = (Result<CommandParser.Command, CommandParser.ParseError>)(method.Invoke(
+            null, new object[] { validLine, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -60,8 +65,9 @@ public class CommandParserTests
         // Act - Use reflection to access private method
         var method = typeof(CommandParser).GetMethod("ParseCommand",
             BindingFlags.NonPublic | BindingFlags.Static);
-        var result = (Result<CommandParser.Command, CommandParser.ParseError>)method.Invoke(
-            null, new object[] { invalidLine, lineNumber });
+        Debug.Assert(method != null, nameof(method) + " != null");
+        var result = (Result<CommandParser.Command, CommandParser.ParseError>)(method.Invoke(
+            null, new object[] { invalidLine, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsError);
@@ -80,8 +86,9 @@ public class CommandParserTests
         // Act - Use reflection to access private method
         var method = typeof(CommandParser).GetMethod("ParseHeader",
             BindingFlags.NonPublic | BindingFlags.Static);
-        var result = (Result<CommandParser.CommandFileHeader, CommandParser.ParseError>)method.Invoke(
-            null, new object[] { validHeader, lineNumber });
+        Debug.Assert(method != null, nameof(method) + " != null");
+        var result = (Result<CommandParser.CommandFileHeader, CommandParser.ParseError>)(method.Invoke(
+            null, new object[] { validHeader, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -103,8 +110,9 @@ public class CommandParserTests
         // Act - Use reflection to access private method
         var method = typeof(CommandParser).GetMethod("ParseHeader",
             BindingFlags.NonPublic | BindingFlags.Static);
-        var result = (Result<CommandParser.CommandFileHeader, CommandParser.ParseError>)method.Invoke(
-            null, new object[] { invalidHeader, lineNumber });
+        Debug.Assert(method != null, nameof(method) + " != null");
+        var result = (Result<CommandParser.CommandFileHeader, CommandParser.ParseError>)(method.Invoke(
+            null, new object[] { invalidHeader, lineNumber }) ?? throw new InvalidOperationException());
 
         // Assert
         Assert.True(result.IsError);

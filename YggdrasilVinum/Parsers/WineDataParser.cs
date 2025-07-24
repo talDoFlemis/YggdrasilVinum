@@ -34,7 +34,7 @@ public static class WineDataParser
     public static Result<List<WineRecord>, ParseError> ParseCsvString(string csvContent)
     {
         Log.Information("Parsing wine data from string input");
-        Log.Debug("CSV string length: {Length} characters", csvContent?.Length ?? 0);
+        Log.Debug("CSV string length: {Length} characters", csvContent.Length);
 
         if (string.IsNullOrEmpty(csvContent))
         {
@@ -66,10 +66,9 @@ public static class WineDataParser
                     new ParseError("CSV input is empty", 0));
             }
 
-            string line;
             var lineNumber = 1;
 
-            while ((line = reader.ReadLine()) != null)
+            while (reader.ReadLine() is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line))
                 {
@@ -163,16 +162,10 @@ public static class WineDataParser
         return result;
     }
 
-    public readonly struct ParseError
+    public readonly struct ParseError(string message, int lineNumber)
     {
-        public readonly string Message;
-        public readonly int LineNumber;
-
-        public ParseError(string message, int lineNumber)
-        {
-            Message = message;
-            LineNumber = lineNumber;
-        }
+        public readonly string Message = message;
+        public readonly int LineNumber = lineNumber;
 
         public override string ToString()
         {

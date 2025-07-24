@@ -4,7 +4,7 @@ using Serilog;
 using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
 namespace YggdrasilVinum.Tests.Unit.Services;
@@ -112,7 +112,7 @@ public class InsertProcessorTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.GetErrorOrThrow().Message.Should().Contain("Failed to get random page");
+        result.GetErrorOrThrow().ToString().Should().Contain("Failed to get random page");
         _mockFileManager.Verify(m => m.PageHasEnoughSpaceToInsertRecord(It.IsAny<Page>(), It.IsAny<WineRecord>()),
             Times.Never);
     }
@@ -135,7 +135,7 @@ public class InsertProcessorTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.GetErrorOrThrow().Message.Should().Contain("Failed to check if page has enough space");
+        result.GetErrorOrThrow().ToString().Should().Contain("Failed to check if page has enough space");
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class InsertProcessorTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.GetErrorOrThrow().Message.Should().Contain("Failed to allocate new page");
+        result.GetErrorOrThrow().ToString().Should().Contain("Failed to allocate new page");
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class InsertProcessorTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.GetErrorOrThrow().Message.Should().Contain("Failed to put page");
+        result.GetErrorOrThrow().ToString().Should().Contain("Failed to put page");
     }
 
     [Fact]
@@ -211,6 +211,6 @@ public class InsertProcessorTests
 
         // Assert
         result.IsError.Should().BeTrue();
-        result.GetErrorOrThrow().Message.Should().Contain("Failed to insert record into B+ tree");
+        result.GetErrorOrThrow().ToString().Should().Contain("Failed to insert record into B+ tree");
     }
 }

@@ -2,7 +2,8 @@ using FluentAssertions;
 using Moq;
 using Serilog;
 using YggdrasilVinum.Models;
-using YggdrasilVinum.Services;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Processing;
 
 namespace YggdrasilVinum.Tests.Unit.Services;
 

@@ -1,5 +1,6 @@
 using Serilog;
 using YggdrasilVinum.Models;
+using YggdrasilVinum.Services.Processing;
 
 namespace YggdrasilVinum.Services;
 

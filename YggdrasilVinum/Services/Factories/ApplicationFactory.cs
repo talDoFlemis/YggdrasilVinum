@@ -4,9 +4,12 @@ using YggdrasilVinum.Buffer;
 using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Parsers;
+using YggdrasilVinum.Services.CommandProcessing;
+using YggdrasilVinum.Services.Facades;
+using YggdrasilVinum.Services.Processing;
 using YggdrasilVinum.Storage;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Factories;
 
 /// <summary>
 ///     Factory class that creates application components and configures the application
@@ -79,6 +82,57 @@ public static class ApplicationFactory
     {
         var bufferManager = new LruBufferManager(fileManager, amountOfPageFrames, amountOfIndexFrames);
         return bufferManager;
+    }
+
+    /// <summary>
+    ///     Creates a StorageFacade that encapsulates storage subsystem complexity.
+    ///     Demonstrates the Facade pattern by providing a unified interface for storage operations.
+    /// </summary>
+    /// <param name="storagePath">Path where storage files are located</param>
+    /// <param name="indexPath">Path for the B+ tree index file</param>
+    /// <param name="degree">Degree of the B+ tree</param>
+    /// <param name="heapSizeInBytes">Size of the heap file in bytes</param>
+    /// <param name="pageSizeInBytes">Size of each page in bytes</param>
+    /// <returns>Configured StorageFacade instance</returns>
+    public static StorageFacade CreateStorageFacade(
+        string storagePath,
+        string indexPath,
+        int degree = 4,
+        ulong heapSizeInBytes = 100000000,
+        ulong pageSizeInBytes = 4096)
+    {
+        Log.Information("Creating storage facade with storage path: {StoragePath}, index path: {IndexPath}",
+            storagePath, indexPath);
+
+        // Create the file manager
+        var fileManager = CreateFileManager(storagePath, heapSizeInBytes, pageSizeInBytes);
+
+        // Create the B+ tree index
+        var bPlusTreeIndex = CreateBPlusTree<int, RID>(indexPath, degree);
+
+        // Create and return the facade
+        var storageFacade = new StorageFacade(bPlusTreeIndex, fileManager);
+
+        Log.Information("Storage facade created successfully");
+        return storageFacade;
+    }
+
+    /// <summary>
+    ///     Creates simplified processors that use the StorageFacade.
+    ///     Demonstrates how the Facade pattern simplifies client code.
+    /// </summary>
+    /// <param name="storageFacade">The storage facade to use</param>
+    /// <returns>Tuple containing simplified insert and search processors</returns>
+    public static (SimplifiedInsertProcessor insertProcessor, SimplifiedSearchProcessor searchProcessor)
+        CreateSimplifiedProcessors(StorageFacade storageFacade)
+    {
+        Log.Information("Creating simplified processors using storage facade");
+
+        var insertProcessor = new SimplifiedInsertProcessor(storageFacade);
+        var searchProcessor = new SimplifiedSearchProcessor(storageFacade);
+
+        Log.Information("Simplified processors created successfully");
+        return (insertProcessor, searchProcessor);
     }
 
     /// <summary>

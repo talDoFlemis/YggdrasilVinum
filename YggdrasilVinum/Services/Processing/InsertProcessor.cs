@@ -4,7 +4,7 @@ using YggdrasilVinum.Index;
 using YggdrasilVinum.Models;
 using YggdrasilVinum.Storage;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.Processing;
 
 public class InsertProcessor(
     IBufferManager bufferManager,
@@ -116,12 +116,12 @@ public class InsertProcessor(
     }
 }
 
-public readonly struct InsertError
+public readonly struct InsertError(string message)
 {
-    public string Message { get; }
+    private string Message { get; } = message;
 
-    public InsertError(string message)
+    public override string ToString()
     {
-        Message = message;
+        return Message;
     }
 }

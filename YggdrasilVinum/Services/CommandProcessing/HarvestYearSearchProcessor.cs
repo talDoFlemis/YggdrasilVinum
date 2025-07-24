@@ -1,7 +1,8 @@
 using Serilog;
 using YggdrasilVinum.Models;
+using YggdrasilVinum.Services.Processing;
 
-namespace YggdrasilVinum.Services;
+namespace YggdrasilVinum.Services.CommandProcessing;
 
 /// <summary>
 ///     A search processor that uses the WineProcessor for efficient binary search by harvest year.

@@ -1,6 +1,7 @@
 # Conventional Commits Configuration
 
-This project follows [Conventional Commits](https://conventionalcommits.org/) specification for automated semantic versioning and changelog generation.
+This project follows [Conventional Commits](https://conventionalcommits.org/) specification for automated semantic
+versioning and changelog generation.
 
 ## Commit Message Format
 
